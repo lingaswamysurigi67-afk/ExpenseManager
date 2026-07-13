@@ -136,6 +136,20 @@ select.input option { color: #000; }
 .topbar h2 { margin: 0; font-size: 28px; color: var(--text); }
 .topbar p { margin: 6px 0 0; color: var(--text-dim); font-size: 16px; }
 
+/* Hamburger button — hidden on desktop, shown on mobile */
+.menu-btn {
+  display: none;
+  width: 44px; height: 44px; flex: 0 0 auto;
+  align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1;
+  border-radius: 12px; cursor: pointer;
+  background: #fff; border: 1px solid var(--border); color: var(--text);
+}
+.sidebar-backdrop {
+  position: fixed; inset: 0; z-index: 55;
+  background: rgba(31, 36, 48, 0.35); backdrop-filter: blur(2px);
+}
+
 .user-chip {
   display: flex; align-items: center; gap: 12px;
   padding: 8px 10px 8px 16px; border-radius: 999px;
@@ -207,5 +221,28 @@ tbody tr:hover { background: var(--glass-strong); }
 @media (max-width: 900px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
   .cols-2 { grid-template-columns: 1fr; }
-  .sidebar { display: none; }
+
+  /* Sidebar becomes a slide-in drawer instead of disappearing */
+  .sidebar {
+    position: fixed;
+    left: 0; top: 0;
+    z-index: 60;
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 20px 60px rgba(31, 36, 48, 0.25);
+  }
+  .sidebar.open { transform: translateX(0); }
+  .menu-btn { display: inline-flex; }
+  .main { padding: 20px 16px; }
+  .topbar h2 { font-size: 22px; }
+  .topbar p { font-size: 14px; }
+  .user-chip span { display: none; }
+}
+
+@media (max-width: 560px) {
+  .stats { grid-template-columns: 1fr; }
+  .main { padding: 16px 12px; }
+  .card { padding: 18px; }
+  .filters .field { min-width: 130px; flex: 1; }
 }
