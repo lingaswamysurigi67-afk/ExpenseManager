@@ -1,0 +1,15 @@
+# .NET
+backend/**/bin/
+backend/**/obj/
+backend/ExpenseManager.Api/Data/*.json
+
+# Node / Vite
+frontend/node_modules/
+frontend/dist/
+
+# Editor / OS
+.vs/
+.idea/
+*.user
+.DS_Store
+Thumbs.db
