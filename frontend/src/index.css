@@ -207,6 +207,19 @@ th.sortable:hover { color: var(--text); }
 td .btn.icon { width: 30px; height: 30px; padding: 5px; font-size: 14px; border-radius: 8px; }
 td .tag { padding: 3px 10px; font-size: 13px; }
 
+/* Bulk selection */
+.chk-col { width: 36px; text-align: center; }
+.chk-col input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--primary); }
+.bulk-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 10px 14px; margin-bottom: 14px;
+  border-radius: 12px;
+  background: rgba(109, 94, 252, 0.10);
+  border: 1px solid var(--border);
+  font-size: 14px; font-weight: 600; color: var(--text);
+}
+
 /* Pagination (Material-style) */
 .pager {
   display: flex; align-items: center; justify-content: flex-end;

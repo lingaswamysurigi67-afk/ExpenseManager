@@ -112,4 +112,19 @@ public class IncomesController : ControllerBase
         await _db.SaveChangesAsync();
         return NoContent();
     }
+
+    [HttpPost("bulk-delete")]
+    public async Task<IActionResult> BulkDelete(BulkDeleteRequest request)
+    {
+        if (request.Ids is null || request.Ids.Count == 0)
+            return BadRequest(new { message = "No ids provided." });
+
+        var toDelete = await _db.Incomes
+            .Where(e => e.UserId == UserId && request.Ids.Contains(e.Id))
+            .ToListAsync();
+
+        _db.Incomes.RemoveRange(toDelete);
+        await _db.SaveChangesAsync();
+        return Ok(new { deleted = toDelete.Count });
+    }
 }

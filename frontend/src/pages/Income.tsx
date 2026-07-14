@@ -22,6 +22,7 @@ export default function Income() {
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'date', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
 
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
@@ -42,6 +43,7 @@ export default function Income() {
       setIncomes(inc.data)
       setCategories(cat.data)
       setPeople(ppl.data)
+      setSelected(new Set())
     } catch {
       setError('Failed to load income.')
     } finally {
@@ -94,6 +96,33 @@ export default function Income() {
 
   useEffect(() => { setPage(1) }, [search, sort, filters, pageSize])
   const paged = visible.slice((page - 1) * pageSize, page * pageSize)
+
+  const allPageSelected = paged.length > 0 && paged.every((e) => selected.has(e.id))
+  const somePageSelected = paged.some((e) => selected.has(e.id))
+
+  const toggleRow = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  const toggleAllOnPage = () => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (allPageSelected) paged.forEach((e) => next.delete(e.id))
+      else paged.forEach((e) => next.add(e.id))
+      return next
+    })
+  }
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return
+    if (!confirm(`Delete ${selected.size} selected income record${selected.size !== 1 ? 's' : ''}?`)) return
+    await client.post('/incomes/bulk-delete', { ids: [...selected] })
+    await load()
+  }
 
   const save = async (payload: IncomePayload) => {
     if (editing) {
@@ -166,6 +195,16 @@ export default function Income() {
 
         {error && <div className="error-banner">{error}</div>}
 
+        {selected.size > 0 && (
+          <div className="bulk-bar">
+            <span>{selected.size} selected</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn danger sm" onClick={bulkDelete}>🗑 Delete selected</button>
+              <button className="btn ghost sm" onClick={() => setSelected(new Set())}>Clear</button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="empty"><span className="spinner" /></div>
         ) : visible.length === 0 ? (
@@ -175,6 +214,14 @@ export default function Income() {
             <table>
               <thead>
                 <tr>
+                  <th className="chk-col">
+                    <input
+                      type="checkbox"
+                      checked={allPageSelected}
+                      ref={(el) => { if (el) el.indeterminate = !allPageSelected && somePageSelected }}
+                      onChange={toggleAllOnPage}
+                    />
+                  </th>
                   <SortHeader label="Date" sortKey="date" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <SortHeader label="Came From" sortKey="person" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <SortHeader label="Category" sortKey="category" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
@@ -187,6 +234,9 @@ export default function Income() {
               <tbody>
                 {paged.map((e) => (
                   <tr key={e.id}>
+                    <td className="chk-col">
+                      <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleRow(e.id)} />
+                    </td>
                     <td>{formatDate(e.date)}</td>
                     <td style={{ fontWeight: 600 }}>{e.personName || e.source || '—'}</td>
                     <td>
