@@ -178,8 +178,8 @@ select.input option { color: #000; }
 
 /* ---------- Table ---------- */
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 14px 16px; font-size: 15px; }
-th { color: var(--text-dim); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
+th, td { text-align: left; padding: 9px 12px; font-size: 14px; }
+th { color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
 tbody tr { border-top: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:hover { background: var(--glass-strong); }
 
