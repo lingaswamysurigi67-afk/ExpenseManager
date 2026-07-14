@@ -10,6 +10,9 @@ public class ExpenseRequest
     [Range(1, int.MaxValue)]
     public int CategoryId { get; set; }
 
+    [Range(1, int.MaxValue)]
+    public int ExpenditureOnId { get; set; }
+
     [Required]
     public DateTime Date { get; set; }
 

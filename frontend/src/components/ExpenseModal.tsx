@@ -1,27 +1,30 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toInputDate, paymentMethods, getErrorMessage } from '../utils'
-import type { Category, Expense, ExpensePayload } from '../types'
+import type { Category, ExpenditureOn, Expense, ExpensePayload } from '../types'
 
 interface ExpenseModalProps {
   open: boolean
   onClose: () => void
   onSave: (payload: ExpensePayload) => Promise<void>
   categories: Category[]
+  expenditureOns: ExpenditureOn[]
   initial: Expense | null
 }
 
 interface FormState {
   amount: string
+  expenditureOnId: string
   categoryId: string
   date: string
   paymentMethod: string
   notes: string
 }
 
-export default function ExpenseModal({ open, onClose, onSave, categories, initial }: ExpenseModalProps) {
+export default function ExpenseModal({ open, onClose, onSave, categories, expenditureOns, initial }: ExpenseModalProps) {
   const [form, setForm] = useState<FormState>({
     amount: '',
+    expenditureOnId: '',
     categoryId: '',
     date: toInputDate(),
     paymentMethod: 'Cash',
@@ -36,6 +39,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, initia
       if (initial) {
         setForm({
           amount: String(initial.amount),
+          expenditureOnId: initial.expenditureOnId != null ? String(initial.expenditureOnId) : '',
           categoryId: String(initial.categoryId),
           date: toInputDate(initial.date),
           paymentMethod: initial.paymentMethod || 'Cash',
@@ -44,14 +48,15 @@ export default function ExpenseModal({ open, onClose, onSave, categories, initia
       } else {
         setForm({
           amount: '',
-          categoryId: categories[0] ? String(categories[0].id) : '',
+          expenditureOnId: '',
+          categoryId: '',
           date: toInputDate(),
           paymentMethod: 'Cash',
           notes: '',
         })
       }
     }
-  }, [open, initial, categories])
+  }, [open, initial])
 
   if (!open) return null
 
@@ -60,12 +65,14 @@ export default function ExpenseModal({ open, onClose, onSave, categories, initia
     setError('')
     const amount = parseFloat(form.amount)
     if (!amount || amount <= 0) return setError('Enter a valid amount greater than 0.')
+    if (!form.expenditureOnId) return setError('Please select who the expense was on.')
     if (!form.categoryId) return setError('Please choose a category.')
 
     setSaving(true)
     try {
       await onSave({
         amount,
+        expenditureOnId: Number(form.expenditureOnId),
         categoryId: Number(form.categoryId),
         date: new Date(form.date).toISOString(),
         paymentMethod: form.paymentMethod,
@@ -111,12 +118,33 @@ export default function ExpenseModal({ open, onClose, onSave, categories, initia
           </div>
 
           <div className="field">
+            <label>Expenditure On (required)</label>
+            <select
+              className="input"
+              value={form.expenditureOnId}
+              onChange={(e) => setForm({ ...form, expenditureOnId: e.target.value })}
+            >
+              <option value="">Select a person…</option>
+              {expenditureOns.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {expenditureOns.length === 0 && (
+              <small style={{ color: 'var(--text-dim)', marginTop: 6 }}>
+                No people yet — add one on the “Expenditure On” page first.
+              </small>
+            )}
+          </div>
+
+          <div className="field">
             <label>Category</label>
             <select
               className="input"
               value={form.categoryId}
+              disabled={!form.expenditureOnId}
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             >
+              <option value="">{form.expenditureOnId ? 'Select a category…' : 'Select a person first'}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}

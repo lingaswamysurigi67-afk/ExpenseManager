@@ -21,12 +21,24 @@ export interface Category {
   updatedDate: string | null
 }
 
+export interface ExpenditureOn {
+  id: number
+  userId: string
+  name: string
+  createdBy: string
+  createdDate: string
+  updatedBy: string | null
+  updatedDate: string | null
+}
+
 export interface Expense {
   id: number
   userId: string
   amount: number
   categoryId: number
   category: string
+  expenditureOnId: number | null
+  expenditureOn: string
   date: string
   paymentMethod: string
   notes: string
@@ -55,13 +67,19 @@ export interface Income {
 export interface ExpensePayload {
   amount: number
   categoryId: number
+  expenditureOnId: number
   date: string
   paymentMethod: string
   notes: string
 }
 
-export interface IncomePayload extends ExpensePayload {
+export interface IncomePayload {
+  amount: number
+  categoryId: number
   source: string
+  date: string
+  paymentMethod: string
+  notes: string
 }
 
 export interface CategoryBreakdown {

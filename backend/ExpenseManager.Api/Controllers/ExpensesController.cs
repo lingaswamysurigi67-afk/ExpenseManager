@@ -47,12 +47,18 @@ public class ExpensesController : ControllerBase
         if (category is null)
             return BadRequest(new { message = "Invalid category." });
 
+        var person = await _db.ExpenditureOns.FirstOrDefaultAsync(p => p.Id == request.ExpenditureOnId && p.UserId == UserId);
+        if (person is null)
+            return BadRequest(new { message = "Invalid expenditure-on person." });
+
         var expense = new Expense
         {
             UserId = UserId,
             Amount = request.Amount,
             CategoryId = category.Id,
             Category = category.Name,
+            ExpenditureOnId = person.Id,
+            ExpenditureOn = person.Name,
             Date = request.Date,
             PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
             Notes = request.Notes?.Trim() ?? string.Empty,
@@ -72,12 +78,18 @@ public class ExpensesController : ControllerBase
         if (category is null)
             return BadRequest(new { message = "Invalid category." });
 
+        var person = await _db.ExpenditureOns.FirstOrDefaultAsync(p => p.Id == request.ExpenditureOnId && p.UserId == UserId);
+        if (person is null)
+            return BadRequest(new { message = "Invalid expenditure-on person." });
+
         var expense = await _db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
         if (expense is null) return NotFound();
 
         expense.Amount = request.Amount;
         expense.CategoryId = category.Id;
         expense.Category = category.Name;
+        expense.ExpenditureOnId = person.Id;
+        expense.ExpenditureOn = person.Name;
         expense.Date = request.Date;
         expense.PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod;
         expense.Notes = request.Notes?.Trim() ?? string.Empty;
