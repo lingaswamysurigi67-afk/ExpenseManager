@@ -16,7 +16,11 @@ export const formatDate = (iso: string): string => {
 
 export const toInputDate = (iso?: string): string => {
   const d = iso ? new Date(iso) : new Date()
-  return d.toISOString().slice(0, 10)
+  // Use local date parts (not toISOString, which shifts to UTC and can roll the day back).
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 export const monthNames: string[] = [

@@ -183,6 +183,17 @@ th { color: var(--text-dim); font-weight: 600; font-size: 13px; text-transform: 
 tbody tr { border-top: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:hover { background: var(--glass-strong); }
 
+/* Scrollable table area with sticky header */
+.table-scroll { max-height: 62vh; overflow: auto; border-radius: 12px; }
+.table-scroll thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: #fff;
+  box-shadow: inset 0 -1px 0 var(--border);
+}
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--text); }
+.sort-ind { font-size: 11px; opacity: 0.7; }
+
 .tag { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .amount { font-weight: 700; font-variant-numeric: tabular-nums; }

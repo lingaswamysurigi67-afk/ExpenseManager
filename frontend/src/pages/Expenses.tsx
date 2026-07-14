@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
+import SortHeader from '../components/SortHeader'
+import type { SortDir } from '../components/SortHeader'
 import { currency, formatDate, monthNames } from '../utils'
 import type { Category, Person, Expense, ExpensePayload } from '../types'
 
@@ -15,6 +17,11 @@ export default function Expenses() {
 
   const now = new Date()
   const [filters, setFilters] = useState({ year: '', month: '', categoryId: '' })
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'date', dir: 'desc' })
+
+  const toggleSort = (key: string) =>
+    setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
 
   const load = async () => {
     setLoading(true)
@@ -44,12 +51,42 @@ export default function Expenses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters])
 
-  const total = useMemo(
-    () => expenses.reduce((sum, e) => sum + Number(e.amount), 0),
-    [expenses]
-  )
-
   const catColor = (id: number) => categories.find((c) => c.id === id)?.color || '#64748b'
+
+  const sortVal = (e: Expense, key: string): string | number => {
+    switch (key) {
+      case 'date': return new Date(e.date).getTime()
+      case 'amount': return Number(e.amount)
+      case 'person': return (e.personName || '').toLowerCase()
+      case 'category': return (e.category || '').toLowerCase()
+      default: return 0
+    }
+  }
+
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    let rows = expenses
+    if (q) {
+      rows = rows.filter((e) =>
+        (e.personName || '').toLowerCase().includes(q) ||
+        (e.category || '').toLowerCase().includes(q) ||
+        (e.notes || '').toLowerCase().includes(q) ||
+        (e.paymentMethod || '').toLowerCase().includes(q)
+      )
+    }
+    const sorted = [...rows].sort((a, b) => {
+      const va = sortVal(a, sort.key)
+      const vb = sortVal(b, sort.key)
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0
+      return sort.dir === 'asc' ? cmp : -cmp
+    })
+    return sorted
+  }, [expenses, search, sort])
+
+  const total = useMemo(
+    () => visible.reduce((sum, e) => sum + Number(e.amount), 0),
+    [visible]
+  )
 
   const save = async (payload: ExpensePayload) => {
     if (editing) {
@@ -74,7 +111,7 @@ export default function Expenses() {
       <div className="topbar" style={{ marginBottom: 18 }}>
         <div>
           <h2 style={{ fontSize: 20 }}>Expenses</h2>
-          <p>{expenses.length} record{expenses.length !== 1 ? 's' : ''} · Total {currency(total)}</p>
+          <p>{visible.length} record{visible.length !== 1 ? 's' : ''} · Total {currency(total)}</p>
         </div>
         <button className="btn" onClick={() => { setEditing(null); setModalOpen(true) }}>
           ＋ Add expense
@@ -104,8 +141,17 @@ export default function Expenses() {
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
-          {(filters.year || filters.month || filters.categoryId) && (
-            <button className="btn ghost sm" onClick={() => setFilters({ year: '', month: '', categoryId: '' })}>
+          <div className="field" style={{ flex: 1, minWidth: 180 }}>
+            <label>Search</label>
+            <input
+              className="input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search person, category, notes…"
+            />
+          </div>
+          {(filters.year || filters.month || filters.categoryId || search) && (
+            <button className="btn ghost sm" onClick={() => { setFilters({ year: '', month: '', categoryId: '' }); setSearch('') }}>
               Clear filters
             </button>
           )}
@@ -115,24 +161,24 @@ export default function Expenses() {
 
         {loading ? (
           <div className="empty"><span className="spinner" /></div>
-        ) : expenses.length === 0 ? (
-          <div className="empty">No expenses yet. Add your first one!</div>
+        ) : visible.length === 0 ? (
+          <div className="empty">No expenses match. Try clearing filters or search.</div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <div className="table-scroll">
             <table>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>On</th>
-                  <th>Category</th>
+                  <SortHeader label="Date" sortKey="date" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
+                  <SortHeader label="Expenditure On" sortKey="person" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
+                  <SortHeader label="Category" sortKey="category" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <th>Notes</th>
                   <th>Method</th>
-                  <th style={{ textAlign: 'right' }}>Amount</th>
+                  <SortHeader label="Amount" sortKey="amount" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} style={{ textAlign: 'right' }} />
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((e) => (
+                {visible.map((e) => (
                   <tr key={e.id}>
                     <td>{formatDate(e.date)}</td>
                     <td style={{ fontWeight: 600 }}>{e.personName || '—'}</td>
