@@ -2,12 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import { currency, formatDate, monthNames } from '../utils'
-import type { Category, ExpenditureOn, Expense, ExpensePayload } from '../types'
+import type { Category, Person, Expense, ExpensePayload } from '../types'
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [expenditureOns, setExpenditureOns] = useState<ExpenditureOn[]>([])
+  const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -27,11 +27,11 @@ export default function Expenses() {
       const [ex, cat, eo] = await Promise.all([
         client.get<Expense[]>('/expenses', { params }),
         client.get<Category[]>('/categories'),
-        client.get<ExpenditureOn[]>('/expenditureon'),
+        client.get<Person[]>('/people'),
       ])
       setExpenses(ex.data)
       setCategories(cat.data)
-      setExpenditureOns(eo.data)
+      setPeople(eo.data)
     } catch {
       setError('Failed to load expenses.')
     } finally {
@@ -135,7 +135,7 @@ export default function Expenses() {
                 {expenses.map((e) => (
                   <tr key={e.id}>
                     <td>{formatDate(e.date)}</td>
-                    <td style={{ fontWeight: 600 }}>{e.expenditureOn || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{e.personName || '—'}</td>
                     <td>
                       <span className="tag" style={{ background: catColor(e.categoryId) + '22', color: 'var(--text)' }}>
                         <span className="dot" style={{ background: catColor(e.categoryId) }} />
@@ -166,7 +166,7 @@ export default function Expenses() {
         onClose={() => setModalOpen(false)}
         onSave={save}
         categories={categories}
-        expenditureOns={expenditureOns}
+        people={people}
         initial={editing}
       />
     </div>

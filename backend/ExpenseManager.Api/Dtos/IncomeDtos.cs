@@ -10,7 +10,10 @@ public class IncomeRequest
     [Range(1, int.MaxValue)]
     public int CategoryId { get; set; }
 
-    [Required, MinLength(1), MaxLength(80)]
+    [Range(1, int.MaxValue)]
+    public int PersonId { get; set; }
+
+    [MaxLength(80)]
     public string Source { get; set; } = string.Empty;
 
     [Required]

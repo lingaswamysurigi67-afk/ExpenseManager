@@ -11,7 +11,7 @@ public class AppDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Income> Incomes => Set<Income>();
-    public DbSet<ExpenditureOn> ExpenditureOns => Set<ExpenditureOn>();
+    public DbSet<Person> People => Set<Person>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -43,7 +43,7 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.Property(x => x.Category).HasMaxLength(40);
-            e.Property(x => x.ExpenditureOn).HasMaxLength(80);
+            e.Property(x => x.PersonName).HasMaxLength(80);
             e.Property(x => x.PaymentMethod).HasMaxLength(30);
             e.Property(x => x.Notes).HasMaxLength(300);
             e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
@@ -56,6 +56,7 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.Property(x => x.Category).HasMaxLength(40);
+            e.Property(x => x.PersonName).HasMaxLength(80);
             e.Property(x => x.Source).HasMaxLength(80);
             e.Property(x => x.PaymentMethod).HasMaxLength(30);
             e.Property(x => x.Notes).HasMaxLength(300);
@@ -64,7 +65,7 @@ public class AppDbContext : DbContext
             e.HasIndex(x => x.UserId);
         });
 
-        modelBuilder.Entity<ExpenditureOn>(e =>
+        modelBuilder.Entity<Person>(e =>
         {
             e.HasKey(x => x.Id);
             e.Property(x => x.Name).HasMaxLength(80).IsRequired();

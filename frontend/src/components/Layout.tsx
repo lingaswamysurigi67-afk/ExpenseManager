@@ -13,7 +13,7 @@ const links: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
   { to: '/expenses', label: 'Expenses', icon: '🧾' },
   { to: '/income', label: 'Income', icon: '💸' },
-  { to: '/expenditure-on', label: 'Expenditure On', icon: '👥' },
+  { to: '/people', label: 'People', icon: '👥' },
   { to: '/categories', label: 'Categories', icon: '🏷️' },
   { to: '/reports', label: 'Reports', icon: '📈' },
 ]

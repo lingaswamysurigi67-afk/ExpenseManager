@@ -47,12 +47,18 @@ public class IncomesController : ControllerBase
         if (category is null)
             return BadRequest(new { message = "Invalid category." });
 
+        var person = await _db.People.FirstOrDefaultAsync(p => p.Id == request.PersonId && p.UserId == UserId);
+        if (person is null)
+            return BadRequest(new { message = "Invalid person." });
+
         var income = new Income
         {
             UserId = UserId,
             Amount = request.Amount,
             CategoryId = category.Id,
             Category = category.Name,
+            PersonId = person.Id,
+            PersonName = person.Name,
             Source = request.Source.Trim(),
             Date = request.Date,
             PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
@@ -73,12 +79,18 @@ public class IncomesController : ControllerBase
         if (category is null)
             return BadRequest(new { message = "Invalid category." });
 
+        var person = await _db.People.FirstOrDefaultAsync(p => p.Id == request.PersonId && p.UserId == UserId);
+        if (person is null)
+            return BadRequest(new { message = "Invalid person." });
+
         var income = await _db.Incomes.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
         if (income is null) return NotFound();
 
         income.Amount = request.Amount;
         income.CategoryId = category.Id;
         income.Category = category.Name;
+        income.PersonId = person.Id;
+        income.PersonName = person.Name;
         income.Source = request.Source.Trim();
         income.Date = request.Date;
         income.PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod;

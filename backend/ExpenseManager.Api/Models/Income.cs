@@ -7,6 +7,8 @@ public class Income
     public decimal Amount { get; set; }
     public int CategoryId { get; set; }
     public string Category { get; set; } = string.Empty;
+    public int? PersonId { get; set; }
+    public string PersonName { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public string PaymentMethod { get; set; } = "Cash";

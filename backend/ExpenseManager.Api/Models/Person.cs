@@ -1,6 +1,6 @@
 namespace ExpenseManager.Api.Models;
 
-public class ExpenditureOn
+public class Person
 {
     public int Id { get; set; }
     public string UserId { get; set; } = string.Empty;

@@ -21,7 +21,7 @@ export interface Category {
   updatedDate: string | null
 }
 
-export interface ExpenditureOn {
+export interface Person {
   id: number
   userId: string
   name: string
@@ -37,8 +37,8 @@ export interface Expense {
   amount: number
   categoryId: number
   category: string
-  expenditureOnId: number | null
-  expenditureOn: string
+  personId: number | null
+  personName: string
   date: string
   paymentMethod: string
   notes: string
@@ -54,6 +54,8 @@ export interface Income {
   amount: number
   categoryId: number
   category: string
+  personId: number | null
+  personName: string
   source: string
   date: string
   paymentMethod: string
@@ -67,7 +69,7 @@ export interface Income {
 export interface ExpensePayload {
   amount: number
   categoryId: number
-  expenditureOnId: number
+  personId: number
   date: string
   paymentMethod: string
   notes: string
@@ -76,6 +78,7 @@ export interface ExpensePayload {
 export interface IncomePayload {
   amount: number
   categoryId: number
+  personId: number
   source: string
   date: string
   paymentMethod: string

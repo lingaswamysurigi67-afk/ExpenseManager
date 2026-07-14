@@ -1,18 +1,20 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toInputDate, paymentMethods, getErrorMessage } from '../utils'
-import type { Category, Income, IncomePayload } from '../types'
+import type { Category, Person, Income, IncomePayload } from '../types'
 
 interface IncomeModalProps {
   open: boolean
   onClose: () => void
   onSave: (payload: IncomePayload) => Promise<void>
   categories: Category[]
+  people: Person[]
   initial: Income | null
 }
 
 interface FormState {
   amount: string
+  personId: string
   categoryId: string
   source: string
   date: string
@@ -20,9 +22,10 @@ interface FormState {
   notes: string
 }
 
-export default function IncomeModal({ open, onClose, onSave, categories, initial }: IncomeModalProps) {
+export default function IncomeModal({ open, onClose, onSave, categories, people, initial }: IncomeModalProps) {
   const [form, setForm] = useState<FormState>({
     amount: '',
+    personId: '',
     categoryId: '',
     source: '',
     date: toInputDate(),
@@ -38,6 +41,7 @@ export default function IncomeModal({ open, onClose, onSave, categories, initial
       if (initial) {
         setForm({
           amount: String(initial.amount),
+          personId: initial.personId != null ? String(initial.personId) : '',
           categoryId: String(initial.categoryId),
           source: initial.source || '',
           date: toInputDate(initial.date),
@@ -47,7 +51,8 @@ export default function IncomeModal({ open, onClose, onSave, categories, initial
       } else {
         setForm({
           amount: '',
-          categoryId: categories[0] ? String(categories[0].id) : '',
+          personId: '',
+          categoryId: '',
           source: '',
           date: toInputDate(),
           paymentMethod: 'Cash',
@@ -55,7 +60,7 @@ export default function IncomeModal({ open, onClose, onSave, categories, initial
         })
       }
     }
-  }, [open, initial, categories])
+  }, [open, initial])
 
   if (!open) return null
 
@@ -64,13 +69,14 @@ export default function IncomeModal({ open, onClose, onSave, categories, initial
     setError('')
     const amount = parseFloat(form.amount)
     if (!amount || amount <= 0) return setError('Enter a valid amount greater than 0.')
-    if (!form.source.trim()) return setError('Please enter who the money came from.')
+    if (!form.personId) return setError('Please select who the money came from.')
     if (!form.categoryId) return setError('Please choose a category.')
 
     setSaving(true)
     try {
       await onSave({
         amount,
+        personId: Number(form.personId),
         categoryId: Number(form.categoryId),
         source: form.source.trim(),
         date: new Date(form.date).toISOString(),
@@ -117,14 +123,22 @@ export default function IncomeModal({ open, onClose, onSave, categories, initial
           </div>
 
           <div className="field">
-            <label>From (person / source)</label>
-            <input
+            <label>Income Came From (required)</label>
+            <select
               className="input"
-              type="text"
-              value={form.source}
-              onChange={(e) => setForm({ ...form, source: e.target.value })}
-              placeholder="e.g. John, Employer, Client…"
-            />
+              value={form.personId}
+              onChange={(e) => setForm({ ...form, personId: e.target.value })}
+            >
+              <option value="">Select a person…</option>
+              {people.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+            {people.length === 0 && (
+              <small style={{ color: 'var(--text-dim)', marginTop: 6 }}>
+                No people yet — add one on the “People” page first.
+              </small>
+            )}
           </div>
 
           <div className="field">
@@ -132,12 +146,25 @@ export default function IncomeModal({ open, onClose, onSave, categories, initial
             <select
               className="input"
               value={form.categoryId}
+              disabled={!form.personId}
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             >
+              <option value="">{form.personId ? 'Select a category…' : 'Select a person first'}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+          </div>
+
+          <div className="field">
+            <label>Reference / note (optional)</label>
+            <input
+              className="input"
+              type="text"
+              value={form.source}
+              onChange={(e) => setForm({ ...form, source: e.target.value })}
+              placeholder="e.g. invoice #, extra detail…"
+            />
           </div>
 
           <div className="field">

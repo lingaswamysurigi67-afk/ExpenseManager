@@ -7,7 +7,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
 import Income from './pages/Income'
-import ExpenditureOn from './pages/ExpenditureOn'
+import People from './pages/People'
 import Categories from './pages/Categories'
 import Reports from './pages/Reports'
 
@@ -36,7 +36,7 @@ export default function App() {
         <Route index element={<Dashboard />} />
         <Route path="expenses" element={<Expenses />} />
         <Route path="income" element={<Income />} />
-        <Route path="expenditure-on" element={<ExpenditureOn />} />
+        <Route path="people" element={<People />} />
         <Route path="categories" element={<Categories />} />
         <Route path="reports" element={<Reports />} />
       </Route>

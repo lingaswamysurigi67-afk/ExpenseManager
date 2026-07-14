@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import { currency, formatDate } from '../utils'
-import type { Category, ExpenditureOn, Expense, ExpensePayload, Summary } from '../types'
+import type { Category, Person, Expense, ExpensePayload, Summary } from '../types'
 
 interface PieDatum {
   name: string
@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [summary, setSummary] = useState<Summary | null>(null)
   const [recent, setRecent] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [expenditureOns, setExpenditureOns] = useState<ExpenditureOn[]>([])
+  const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
 
@@ -26,12 +26,12 @@ export default function Dashboard() {
         client.get<Summary>('/reports/summary'),
         client.get<Expense[]>('/expenses'),
         client.get<Category[]>('/categories'),
-        client.get<ExpenditureOn[]>('/expenditureon'),
+        client.get<Person[]>('/people'),
       ])
       setSummary(sum.data)
       setRecent(ex.data.slice(0, 6))
       setCategories(cat.data)
-      setExpenditureOns(eo.data)
+      setPeople(eo.data)
     } finally {
       setLoading(false)
     }
@@ -139,7 +139,7 @@ export default function Dashboard() {
         onClose={() => setModalOpen(false)}
         onSave={save}
         categories={categories}
-        expenditureOns={expenditureOns}
+        people={people}
         initial={null}
       />
     </div>

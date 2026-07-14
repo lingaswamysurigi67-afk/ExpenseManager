@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import IncomeModal from '../components/IncomeModal'
 import { currency, formatDate, monthNames } from '../utils'
-import type { Category, Income as IncomeModel, IncomePayload } from '../types'
+import type { Category, Person, Income as IncomeModel, IncomePayload } from '../types'
 
 export default function Income() {
   const [incomes, setIncomes] = useState<IncomeModel[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -23,12 +24,14 @@ export default function Income() {
       if (filters.year) params.year = filters.year
       if (filters.month) params.month = filters.month
       if (filters.categoryId) params.categoryId = filters.categoryId
-      const [inc, cat] = await Promise.all([
+      const [inc, cat, ppl] = await Promise.all([
         client.get<IncomeModel[]>('/incomes', { params }),
         client.get<Category[]>('/categories'),
+        client.get<Person[]>('/people'),
       ])
       setIncomes(inc.data)
       setCategories(cat.data)
+      setPeople(ppl.data)
     } catch {
       setError('Failed to load income.')
     } finally {
@@ -120,7 +123,7 @@ export default function Income() {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>From</th>
+                  <th>Came From</th>
                   <th>Category</th>
                   <th>Notes</th>
                   <th>Method</th>
@@ -132,7 +135,7 @@ export default function Income() {
                 {incomes.map((e) => (
                   <tr key={e.id}>
                     <td>{formatDate(e.date)}</td>
-                    <td style={{ fontWeight: 600 }}>{e.source || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{e.personName || e.source || '—'}</td>
                     <td>
                       <span className="tag" style={{ background: catColor(e.categoryId) + '22', color: 'var(--text)' }}>
                         <span className="dot" style={{ background: catColor(e.categoryId) }} />
@@ -163,6 +166,7 @@ export default function Income() {
         onClose={() => setModalOpen(false)}
         onSave={save}
         categories={categories}
+        people={people}
         initial={editing}
       />
     </div>

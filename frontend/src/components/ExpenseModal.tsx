@@ -1,30 +1,30 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toInputDate, paymentMethods, getErrorMessage } from '../utils'
-import type { Category, ExpenditureOn, Expense, ExpensePayload } from '../types'
+import type { Category, Person, Expense, ExpensePayload } from '../types'
 
 interface ExpenseModalProps {
   open: boolean
   onClose: () => void
   onSave: (payload: ExpensePayload) => Promise<void>
   categories: Category[]
-  expenditureOns: ExpenditureOn[]
+  people: Person[]
   initial: Expense | null
 }
 
 interface FormState {
   amount: string
-  expenditureOnId: string
+  personId: string
   categoryId: string
   date: string
   paymentMethod: string
   notes: string
 }
 
-export default function ExpenseModal({ open, onClose, onSave, categories, expenditureOns, initial }: ExpenseModalProps) {
+export default function ExpenseModal({ open, onClose, onSave, categories, people, initial }: ExpenseModalProps) {
   const [form, setForm] = useState<FormState>({
     amount: '',
-    expenditureOnId: '',
+    personId: '',
     categoryId: '',
     date: toInputDate(),
     paymentMethod: 'Cash',
@@ -39,7 +39,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, expend
       if (initial) {
         setForm({
           amount: String(initial.amount),
-          expenditureOnId: initial.expenditureOnId != null ? String(initial.expenditureOnId) : '',
+          personId: initial.personId != null ? String(initial.personId) : '',
           categoryId: String(initial.categoryId),
           date: toInputDate(initial.date),
           paymentMethod: initial.paymentMethod || 'Cash',
@@ -48,7 +48,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, expend
       } else {
         setForm({
           amount: '',
-          expenditureOnId: '',
+          personId: '',
           categoryId: '',
           date: toInputDate(),
           paymentMethod: 'Cash',
@@ -65,14 +65,14 @@ export default function ExpenseModal({ open, onClose, onSave, categories, expend
     setError('')
     const amount = parseFloat(form.amount)
     if (!amount || amount <= 0) return setError('Enter a valid amount greater than 0.')
-    if (!form.expenditureOnId) return setError('Please select who the expense was on.')
+    if (!form.personId) return setError('Please select who the expense was on.')
     if (!form.categoryId) return setError('Please choose a category.')
 
     setSaving(true)
     try {
       await onSave({
         amount,
-        expenditureOnId: Number(form.expenditureOnId),
+        personId: Number(form.personId),
         categoryId: Number(form.categoryId),
         date: new Date(form.date).toISOString(),
         paymentMethod: form.paymentMethod,
@@ -121,17 +121,17 @@ export default function ExpenseModal({ open, onClose, onSave, categories, expend
             <label>Expenditure On (required)</label>
             <select
               className="input"
-              value={form.expenditureOnId}
-              onChange={(e) => setForm({ ...form, expenditureOnId: e.target.value })}
+              value={form.personId}
+              onChange={(e) => setForm({ ...form, personId: e.target.value })}
             >
               <option value="">Select a person…</option>
-              {expenditureOns.map((p) => (
+              {people.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
-            {expenditureOns.length === 0 && (
+            {people.length === 0 && (
               <small style={{ color: 'var(--text-dim)', marginTop: 6 }}>
-                No people yet — add one on the “Expenditure On” page first.
+                No people yet — add one on the “People” page first.
               </small>
             )}
           </div>
@@ -141,10 +141,10 @@ export default function ExpenseModal({ open, onClose, onSave, categories, expend
             <select
               className="input"
               value={form.categoryId}
-              disabled={!form.expenditureOnId}
+              disabled={!form.personId}
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             >
-              <option value="">{form.expenditureOnId ? 'Select a category…' : 'Select a person first'}</option>
+              <option value="">{form.personId ? 'Select a category…' : 'Select a person first'}</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}

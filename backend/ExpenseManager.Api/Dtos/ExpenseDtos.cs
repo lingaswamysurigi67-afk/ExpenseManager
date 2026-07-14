@@ -11,7 +11,7 @@ public class ExpenseRequest
     public int CategoryId { get; set; }
 
     [Range(1, int.MaxValue)]
-    public int ExpenditureOnId { get; set; }
+    public int PersonId { get; set; }
 
     [Required]
     public DateTime Date { get; set; }
