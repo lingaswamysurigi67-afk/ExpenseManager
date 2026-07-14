@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
@@ -23,6 +24,7 @@ export default function Expenses() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => Promise<void> } | null>(null)
 
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
@@ -116,11 +118,12 @@ export default function Expenses() {
     })
   }
 
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
     if (selected.size === 0) return
-    if (!confirm(`Delete ${selected.size} selected expense${selected.size !== 1 ? 's' : ''}?`)) return
-    await client.post('/expenses/bulk-delete', { ids: [...selected] })
-    await load()
+    setConfirmState({
+      message: `Delete ${selected.size} selected expense${selected.size !== 1 ? 's' : ''}? This cannot be undone.`,
+      onConfirm: async () => { await client.post('/expenses/bulk-delete', { ids: [...selected] }); await load() },
+    })
   }
 
   const save = async (payload: ExpensePayload) => {
@@ -132,10 +135,11 @@ export default function Expenses() {
     await load()
   }
 
-  const remove = async (id: number) => {
-    if (!confirm('Delete this expense?')) return
-    await client.delete(`/expenses/${id}`)
-    await load()
+  const remove = (id: number) => {
+    setConfirmState({
+      message: 'Delete this expense? This cannot be undone.',
+      onConfirm: async () => { await client.delete(`/expenses/${id}`); await load() },
+    })
   }
 
   const years: number[] = []
@@ -271,6 +275,16 @@ export default function Expenses() {
         categories={categories}
         people={people}
         initial={editing}
+      />
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title="Delete"
+        message={confirmState?.message || ''}
+        confirmLabel="Delete"
+        danger
+        onCancel={() => setConfirmState(null)}
+        onConfirm={async () => { const action = confirmState?.onConfirm; setConfirmState(null); if (action) await action() }}
       />
     </div>
   )

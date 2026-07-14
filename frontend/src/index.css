@@ -264,6 +264,7 @@ td .tag { padding: 3px 10px; font-size: 13px; }
 
 .modal-backdrop { position: fixed; inset: 0; background: rgba(31, 36, 48, 0.35); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 50; padding: 20px; animation: fade 0.15s ease; }
 .modal { width: 100%; max-width: 520px; padding: 32px; }
+.confirm-modal { max-width: 420px; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 .fade-up { animation: fadeUp 0.3s ease both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }

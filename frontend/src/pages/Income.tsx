@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import IncomeModal from '../components/IncomeModal'
+import ConfirmDialog from '../components/ConfirmDialog'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
@@ -23,6 +24,7 @@ export default function Income() {
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => Promise<void> } | null>(null)
 
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
@@ -117,11 +119,12 @@ export default function Income() {
     })
   }
 
-  const bulkDelete = async () => {
+  const bulkDelete = () => {
     if (selected.size === 0) return
-    if (!confirm(`Delete ${selected.size} selected income record${selected.size !== 1 ? 's' : ''}?`)) return
-    await client.post('/incomes/bulk-delete', { ids: [...selected] })
-    await load()
+    setConfirmState({
+      message: `Delete ${selected.size} selected income record${selected.size !== 1 ? 's' : ''}? This cannot be undone.`,
+      onConfirm: async () => { await client.post('/incomes/bulk-delete', { ids: [...selected] }); await load() },
+    })
   }
 
   const save = async (payload: IncomePayload) => {
@@ -133,10 +136,11 @@ export default function Income() {
     await load()
   }
 
-  const remove = async (id: number) => {
-    if (!confirm('Delete this income?')) return
-    await client.delete(`/incomes/${id}`)
-    await load()
+  const remove = (id: number) => {
+    setConfirmState({
+      message: 'Delete this income record? This cannot be undone.',
+      onConfirm: async () => { await client.delete(`/incomes/${id}`); await load() },
+    })
   }
 
   const years: number[] = []
@@ -272,6 +276,16 @@ export default function Income() {
         categories={categories}
         people={people}
         initial={editing}
+      />
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title="Delete"
+        message={confirmState?.message || ''}
+        confirmLabel="Delete"
+        danger
+        onCancel={() => setConfirmState(null)}
+        onConfirm={async () => { const action = confirmState?.onConfirm; setConfirmState(null); if (action) await action() }}
       />
     </div>
   )
