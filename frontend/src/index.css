@@ -94,6 +94,15 @@ a { color: var(--primary); text-decoration: none; }
 }
 select.input option { color: #000; }
 
+/* Compact filter controls (desktop + mobile) */
+.filters .field { gap: 5px; }
+.filters .field label { font-size: 12px; }
+.filters .input {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+}
+
 /* ---------- Layout ---------- */
 .app-shell { display: flex; min-height: 100vh; }
 .sidebar {
