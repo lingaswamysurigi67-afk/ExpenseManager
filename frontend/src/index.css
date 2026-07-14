@@ -194,6 +194,18 @@ th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
 th.sortable:hover { color: var(--text); }
 .sort-ind { font-size: 11px; opacity: 0.7; }
 
+/* Pagination */
+.pager {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-top: 14px;
+}
+.pager-left { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.pager-info { color: var(--text-dim); font-size: 14px; }
+.pager-size { display: flex; align-items: center; gap: 8px; color: var(--text-dim); font-size: 14px; }
+.pager-size .input { width: auto; padding: 6px 10px; }
+.pager-controls { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pager-page { color: var(--text-dim); font-size: 14px; padding: 0 6px; }
+
 .tag { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 600; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .amount { font-weight: 700; font-variant-numeric: tabular-nums; }

@@ -3,6 +3,7 @@ import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
+import Pagination from '../components/Pagination'
 import { currency, formatDate, monthNames } from '../utils'
 import type { Category, Person, Expense, ExpensePayload } from '../types'
 
@@ -19,6 +20,8 @@ export default function Expenses() {
   const [filters, setFilters] = useState({ year: '', month: '', categoryId: '' })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'date', dir: 'desc' })
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
 
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
@@ -87,6 +90,9 @@ export default function Expenses() {
     () => visible.reduce((sum, e) => sum + Number(e.amount), 0),
     [visible]
   )
+
+  useEffect(() => { setPage(1) }, [search, sort, filters, pageSize])
+  const paged = visible.slice((page - 1) * pageSize, page * pageSize)
 
   const save = async (payload: ExpensePayload) => {
     if (editing) {
@@ -178,7 +184,7 @@ export default function Expenses() {
                 </tr>
               </thead>
               <tbody>
-                {visible.map((e) => (
+                {paged.map((e) => (
                   <tr key={e.id}>
                     <td>{formatDate(e.date)}</td>
                     <td style={{ fontWeight: 600 }}>{e.personName || '—'}</td>
@@ -205,6 +211,7 @@ export default function Expenses() {
             </table>
           </div>
         )}
+        <Pagination page={page} pageSize={pageSize} total={visible.length} onPage={setPage} onPageSize={setPageSize} />
       </div>
 
       <ExpenseModal
