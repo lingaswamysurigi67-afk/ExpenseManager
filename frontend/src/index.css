@@ -283,4 +283,5 @@ td .tag { padding: 3px 10px; font-size: 13px; }
   .main { padding: 16px 12px; }
   .card { padding: 18px; }
   .filters .field { min-width: 130px; flex: 1; }
+  .pager { justify-content: space-between; gap: 12px 16px; }
 }
