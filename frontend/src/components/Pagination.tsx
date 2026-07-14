@@ -21,30 +21,23 @@ export default function Pagination({
 
   return (
     <div className="pager">
-      <div className="pager-left">
-        <span className="pager-info">Showing {from}–{to} of {total}</span>
-        <label className="pager-size">
-          Rows:
-          <select
-            className="input"
-            value={pageSize}
-            onChange={(e) => onPageSize(Number(e.target.value))}
-          >
-            {pageSizeOptions.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </select>
-        </label>
+      <span className="pager-size">
+        Items per page:
+        <select value={pageSize} onChange={(e) => onPageSize(Number(e.target.value))}>
+          {pageSizeOptions.map((n) => (
+            <option key={n} value={n}>{n}</option>
+          ))}
+        </select>
+      </span>
+
+      <span className="pager-info">{from}–{to} of {total}</span>
+
+      <div className="pager-controls">
+        <button className="pager-btn" disabled={page <= 1} onClick={() => onPage(1)} title="First page" aria-label="First page">⏮</button>
+        <button className="pager-btn" disabled={page <= 1} onClick={() => onPage(page - 1)} title="Previous page" aria-label="Previous page">‹</button>
+        <button className="pager-btn" disabled={page >= pageCount} onClick={() => onPage(page + 1)} title="Next page" aria-label="Next page">›</button>
+        <button className="pager-btn" disabled={page >= pageCount} onClick={() => onPage(pageCount)} title="Last page" aria-label="Last page">⏭</button>
       </div>
-      {total > pageSize && (
-        <div className="pager-controls">
-          <button className="btn ghost sm" disabled={page <= 1} onClick={() => onPage(1)}>« First</button>
-          <button className="btn ghost sm" disabled={page <= 1} onClick={() => onPage(page - 1)}>‹ Prev</button>
-          <span className="pager-page">Page {page} / {pageCount}</span>
-          <button className="btn ghost sm" disabled={page >= pageCount} onClick={() => onPage(page + 1)}>Next ›</button>
-          <button className="btn ghost sm" disabled={page >= pageCount} onClick={() => onPage(pageCount)}>Last »</button>
-        </div>
-      )}
     </div>
   )
 }
