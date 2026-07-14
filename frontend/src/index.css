@@ -178,7 +178,7 @@ select.input option { color: #000; }
 
 /* ---------- Table ---------- */
 table { width: 100%; border-collapse: collapse; }
-th, td { text-align: left; padding: 9px 12px; font-size: 14px; }
+th, td { text-align: left; padding: 5px 12px; font-size: 14px; }
 th { color: var(--text-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
 tbody tr { border-top: 1px solid var(--border); transition: background 0.1s; }
 tbody tr:hover { background: var(--glass-strong); }
@@ -193,6 +193,10 @@ tbody tr:hover { background: var(--glass-strong); }
 th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
 th.sortable:hover { color: var(--text); }
 .sort-ind { font-size: 11px; opacity: 0.7; }
+
+/* Compact controls inside table rows to keep row height small */
+td .btn.icon { width: 30px; height: 30px; padding: 5px; font-size: 14px; border-radius: 8px; }
+td .tag { padding: 3px 10px; font-size: 13px; }
 
 /* Pagination */
 .pager {
