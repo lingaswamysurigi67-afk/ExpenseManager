@@ -33,7 +33,7 @@ public class IncomesController : ControllerBase
         return Ok(list);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetOne(int id)
     {
         var income = await _db.Incomes.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
@@ -72,7 +72,7 @@ public class IncomesController : ControllerBase
         return CreatedAtAction(nameof(GetOne), new { id = income.Id }, income);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, IncomeRequest request)
     {
         var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == request.CategoryId);
@@ -102,7 +102,7 @@ public class IncomesController : ControllerBase
         return Ok(income);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var income = await _db.Incomes.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);

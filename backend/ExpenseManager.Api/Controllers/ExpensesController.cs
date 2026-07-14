@@ -33,7 +33,7 @@ public class ExpensesController : ControllerBase
         return Ok(list);
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetOne(int id)
     {
         var expense = await _db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
@@ -71,7 +71,7 @@ public class ExpensesController : ControllerBase
         return CreatedAtAction(nameof(GetOne), new { id = expense.Id }, expense);
     }
 
-    [HttpPut("{id}")]
+    [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, ExpenseRequest request)
     {
         var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == request.CategoryId);
@@ -100,7 +100,7 @@ public class ExpensesController : ControllerBase
         return Ok(expense);
     }
 
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
         var expense = await _db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
