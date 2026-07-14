@@ -52,17 +52,31 @@ public class CategoriesController : ControllerBase
         return CreatedAtAction(nameof(GetAll), new { id = category.Id }, category);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> Update(int id, CategoryRequest request)
     {
-        var category = await _db.Categories
-            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDefault);
+        var name = request.Name.Trim();
+
+        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
         if (category is null)
-            return NotFound(new { message = "Category not found or cannot be deleted." });
+            return NotFound(new { message = "Category not found." });
 
-        _db.Categories.Remove(category);
+        var dup = await _db.Categories.AnyAsync(c => c.Id != id && c.Name == name);
+        if (dup)
+            return Conflict(new { message = "A category with that name already exists." });
+
+        category.Name = name;
+        category.Color = string.IsNullOrWhiteSpace(request.Color) ? category.Color : request.Color;
+        category.UpdatedBy = UserId;
+        category.UpdatedDate = DateTime.UtcNow;
+
+        // Keep the denormalized category name in sync on referencing rows.
+        var exps = await _db.Expenses.Where(e => e.CategoryId == id).ToListAsync();
+        foreach (var e in exps) e.Category = name;
+        var incs = await _db.Incomes.Where(i => i.CategoryId == id).ToListAsync();
+        foreach (var i in incs) i.Category = name;
+
         await _db.SaveChangesAsync();
-
-        return NoContent();
+        return Ok(category);
     }
 }

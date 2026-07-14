@@ -11,6 +11,7 @@ export default function Categories() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', color: swatches[5] })
+  const [editingId, setEditingId] = useState<number | null>(null)
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
@@ -27,30 +28,35 @@ export default function Categories() {
 
   useEffect(() => { load() }, [])
 
-  const add = async (e: FormEvent) => {
+  const resetForm = () => {
+    setEditingId(null)
+    setForm({ name: '', color: swatches[5] })
+  }
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
     if (!form.name.trim()) return
     setSaving(true)
     try {
-      await client.post('/categories', form)
-      setForm({ name: '', color: swatches[5] })
+      if (editingId != null) {
+        await client.put(`/categories/${editingId}`, form)
+      } else {
+        await client.post('/categories', form)
+      }
+      resetForm()
       await load()
     } catch (err) {
-      setError(getErrorMessage(err, 'Could not add category.'))
+      setError(getErrorMessage(err, 'Could not save category.'))
     } finally {
       setSaving(false)
     }
   }
 
-  const remove = async (id: number) => {
-    if (!confirm('Delete this category?')) return
-    try {
-      await client.delete(`/categories/${id}`)
-      await load()
-    } catch {
-      setError('Could not delete category.')
-    }
+  const startEdit = (c: Category) => {
+    setEditingId(c.id)
+    setForm({ name: c.name, color: c.color })
+    setError('')
   }
 
   return (
@@ -76,11 +82,12 @@ export default function Categories() {
                     <span className="dot" style={{ background: c.color }} />
                     {c.name}
                   </span>
-                  {c.isDefault ? (
-                    <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Default</span>
-                  ) : (
-                    <button className="btn danger icon" title="Delete" onClick={() => remove(c.id)}>🗑</button>
-                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    {c.isDefault && (
+                      <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>Default</span>
+                    )}
+                    <button className="btn ghost icon" title="Edit" onClick={() => startEdit(c)}>✎</button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -88,8 +95,8 @@ export default function Categories() {
         </div>
 
         <div className="card" style={{ padding: 22 }}>
-          <h3 className="section-title">Add a category</h3>
-          <form onSubmit={add}>
+          <h3 className="section-title">{editingId != null ? 'Edit category' : 'Add a category'}</h3>
+          <form onSubmit={submit}>
             <div className="field">
               <label>Name</label>
               <input
@@ -118,9 +125,14 @@ export default function Categories() {
                 ))}
               </div>
             </div>
-            <button className="btn" style={{ width: '100%', marginTop: 8 }} disabled={saving}>
-              {saving ? <span className="spinner" /> : '＋ Add category'}
-            </button>
+            <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
+              <button className="btn" style={{ flex: 1 }} disabled={saving}>
+                {saving ? <span className="spinner" /> : (editingId != null ? 'Update' : '＋ Add category')}
+              </button>
+              {editingId != null && (
+                <button type="button" className="btn ghost" onClick={resetForm}>Cancel</button>
+              )}
+            </div>
           </form>
         </div>
       </div>
