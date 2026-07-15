@@ -64,6 +64,9 @@ export default function Login() {
               required
             />
           </div>
+          <div style={{ textAlign: 'right', marginBottom: 12, marginTop: -6 }}>
+            <Link to="/forgot-password" style={{ fontSize: 13 }}>Forgot password?</Link>
+          </div>
           <button className="btn" style={{ width: '100%', marginTop: 6 }} disabled={loading}>
             {loading ? <span className="spinner" /> : 'Sign in'}
           </button>

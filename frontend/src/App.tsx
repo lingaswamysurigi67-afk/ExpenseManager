@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Expenses from './pages/Expenses'
@@ -24,6 +25,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" replace /> : <Register />} />
+      <Route path="/forgot-password" element={user ? <Navigate to="/" replace /> : <ForgotPassword />} />
 
       <Route
         path="/"

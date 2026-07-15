@@ -72,4 +72,22 @@ public class AuthController : ControllerBase
             ExpiresAt = expires
         });
     }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+    {
+        var userName = request.UserName.Trim();
+        var email = request.Email.Trim().ToLowerInvariant();
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.UserName == userName && u.Email == email);
+        if (user is null)
+            return NotFound(new { message = "No account matches that username and email." });
+
+        user.PasswordHash = _hasher.HashPassword(user, request.NewPassword);
+        user.UpdatedBy = "self";
+        user.UpdatedDate = DateTime.UtcNow;
+        await _db.SaveChangesAsync();
+
+        return Ok(new { message = "Password has been reset. You can now sign in." });
+    }
 }

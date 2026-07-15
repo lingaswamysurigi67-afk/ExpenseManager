@@ -8,6 +8,7 @@ interface AuthContextType {
   ready: boolean
   login: (userNameOrEmail: string, password: string) => Promise<void>
   register: (userName: string, email: string, password: string) => Promise<void>
+  resetPassword: (userName: string, email: string, newPassword: string) => Promise<string>
   logout: () => void
 }
 
@@ -41,6 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     persist(data)
   }
 
+  const resetPassword = async (userName: string, email: string, newPassword: string) => {
+    const { data } = await client.post<{ message: string }>('/auth/reset-password', { userName, email, newPassword })
+    return data.message
+  }
+
   const logout = () => {
     localStorage.removeItem('em_token')
     localStorage.removeItem('em_user')
@@ -48,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, ready, login, register, logout }}>
+    <AuthContext.Provider value={{ user, ready, login, register, resetPassword, logout }}>
       {children}
     </AuthContext.Provider>
   )
