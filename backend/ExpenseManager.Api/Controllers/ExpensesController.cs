@@ -19,13 +19,15 @@ public class ExpensesController : ControllerBase
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? year, [FromQuery] int? month, [FromQuery] int? categoryId)
+    public async Task<IActionResult> GetAll([FromQuery] int? year, [FromQuery] int? month, [FromQuery] int? categoryId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
     {
         var query = _db.Expenses.Where(e => e.UserId == UserId);
 
         if (year.HasValue) query = query.Where(e => e.Date.Year == year.Value);
         if (month.HasValue) query = query.Where(e => e.Date.Month == month.Value);
         if (categoryId.HasValue) query = query.Where(e => e.CategoryId == categoryId.Value);
+        if (from.HasValue) query = query.Where(e => e.Date >= from.Value.Date);
+        if (to.HasValue) query = query.Where(e => e.Date <= to.Value.Date);
 
         var list = await query
             .OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedDate)

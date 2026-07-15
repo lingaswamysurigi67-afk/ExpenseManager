@@ -18,7 +18,7 @@ export default function Expenses() {
   const [editing, setEditing] = useState<Expense | null>(null)
 
   const now = new Date()
-  const [filters, setFilters] = useState({ year: '', month: '', categoryId: '' })
+  const [filters, setFilters] = useState({ year: '', month: '', categoryId: '', from: '', to: '' })
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'date', dir: 'desc' })
   const [page, setPage] = useState(1)
@@ -37,6 +37,8 @@ export default function Expenses() {
       if (filters.year) params.year = filters.year
       if (filters.month) params.month = filters.month
       if (filters.categoryId) params.categoryId = filters.categoryId
+      if (filters.from) params.from = filters.from
+      if (filters.to) params.to = filters.to
       const [ex, cat, eo] = await Promise.all([
         client.get<Expense[]>('/expenses', { params }),
         client.get<Category[]>('/categories'),
@@ -180,6 +182,14 @@ export default function Expenses() {
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </div>
+          <div className="field">
+            <label>From</label>
+            <input type="date" className="input" value={filters.from} max={filters.to || undefined} onChange={(e) => setFilters({ ...filters, from: e.target.value })} />
+          </div>
+          <div className="field">
+            <label>To</label>
+            <input type="date" className="input" value={filters.to} min={filters.from || undefined} onChange={(e) => setFilters({ ...filters, to: e.target.value })} />
+          </div>
           <div className="field" style={{ flex: 1, minWidth: 180 }}>
             <label>Search</label>
             <input
@@ -189,8 +199,8 @@ export default function Expenses() {
               placeholder="Search person, category, notes…"
             />
           </div>
-          {(filters.year || filters.month || filters.categoryId || search) && (
-            <button className="btn ghost sm" onClick={() => { setFilters({ year: '', month: '', categoryId: '' }); setSearch('') }}>
+          {(filters.year || filters.month || filters.categoryId || filters.from || filters.to || search) && (
+            <button className="btn ghost sm" onClick={() => { setFilters({ year: '', month: '', categoryId: '', from: '', to: '' }); setSearch('') }}>
               Clear filters
             </button>
           )}
