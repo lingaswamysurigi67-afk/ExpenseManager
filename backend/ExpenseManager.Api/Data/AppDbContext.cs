@@ -19,65 +19,93 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<User>(e =>
         {
+            e.ToTable("USERS", "Identity");
             e.HasKey(u => u.Id);
             e.HasIndex(u => u.UserName).IsUnique();
             e.HasIndex(u => u.Email).IsUnique();
-            e.Property(u => u.UserName).HasMaxLength(80).IsRequired();
-            e.Property(u => u.Email).HasMaxLength(160).IsRequired();
-            e.Property(u => u.PasswordHash).IsRequired();
-            e.Property(u => u.CreatedBy).HasMaxLength(100).IsRequired();
-            e.Property(u => u.UpdatedBy).HasMaxLength(100);
+            e.Property(u => u.Id).HasColumnName("ID");
+            e.Property(u => u.UserName).HasColumnName("USER_NAME").HasMaxLength(80).IsRequired();
+            e.Property(u => u.Email).HasColumnName("EMAIL").HasMaxLength(160).IsRequired();
+            e.Property(u => u.PasswordHash).HasColumnName("PASSWORD_HASH").IsRequired();
+            e.Property(u => u.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(u => u.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(u => u.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(u => u.UpdatedDate).HasColumnName("UPDATED_DATE");
         });
 
         modelBuilder.Entity<Category>(e =>
         {
+            e.ToTable("CATEGORIES", "Config");
             e.HasKey(c => c.Id);
-            e.Property(c => c.Name).HasMaxLength(40).IsRequired();
-            e.Property(c => c.Color).HasMaxLength(20);
-            e.Property(c => c.CreatedBy).HasMaxLength(100).IsRequired();
-            e.Property(c => c.UpdatedBy).HasMaxLength(100);
-            e.Property(c => c.IsActive).HasDefaultValue(true);
+            e.Property(c => c.Id).HasColumnName("ID");
+            e.Property(c => c.Name).HasColumnName("NAME").HasMaxLength(40).IsRequired();
+            e.Property(c => c.Color).HasColumnName("COLOR").HasMaxLength(20);
+            e.Property(c => c.IsDefault).HasColumnName("IS_DEFAULT");
+            e.Property(c => c.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(c => c.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(c => c.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(c => c.UpdatedDate).HasColumnName("UPDATED_DATE");
+            e.Property(c => c.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
             e.HasQueryFilter(c => c.IsActive);
         });
 
         modelBuilder.Entity<Expense>(e =>
         {
+            e.ToTable("EXPENSES", "People");
             e.HasKey(x => x.Id);
-            e.Property(x => x.Amount).HasPrecision(18, 2);
-            e.Property(x => x.Category).HasMaxLength(40);
-            e.Property(x => x.Date).HasColumnName("Expenditure Date");
-            e.Property(x => x.PaymentMethod).HasMaxLength(30);
-            e.Property(x => x.Notes).HasMaxLength(300);
-            e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
-            e.Property(x => x.UpdatedBy).HasMaxLength(100);
-            e.Property(x => x.IsActive).HasDefaultValue(true);
+            e.Property(x => x.Id).HasColumnName("ID");
+            e.Property(x => x.UserId).HasColumnName("USER_ID");
+            e.Property(x => x.Amount).HasColumnName("AMOUNT").HasPrecision(18, 2);
+            e.Property(x => x.CategoryId).HasColumnName("CATEGORY_ID");
+            e.Property(x => x.Category).HasColumnName("CATEGORY").HasMaxLength(40);
+            e.Property(x => x.PersonId).HasColumnName("PERSON_ID");
+            e.Property(x => x.Date).HasColumnName("EXPENDITURE_DATE");
+            e.Property(x => x.PaymentMethod).HasColumnName("PAYMENT_METHOD").HasMaxLength(30);
+            e.Property(x => x.Notes).HasColumnName("NOTES").HasMaxLength(300);
+            e.Property(x => x.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(x => x.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(x => x.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(x => x.UpdatedDate).HasColumnName("UPDATED_DATE");
+            e.Property(x => x.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
             e.HasQueryFilter(x => x.IsActive);
             e.HasIndex(x => x.UserId);
         });
 
         modelBuilder.Entity<Income>(e =>
         {
+            e.ToTable("INCOMES", "People");
             e.HasKey(x => x.Id);
-            e.Property(x => x.Amount).HasPrecision(18, 2);
-            e.Property(x => x.Category).HasMaxLength(40);
-            e.Property(x => x.Source).HasMaxLength(80);
-            e.Property(x => x.Date).HasColumnName("Money Came Date");
-            e.Property(x => x.PaymentMethod).HasMaxLength(30);
-            e.Property(x => x.Notes).HasMaxLength(300);
-            e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
-            e.Property(x => x.UpdatedBy).HasMaxLength(100);
-            e.Property(x => x.IsActive).HasDefaultValue(true);
+            e.Property(x => x.Id).HasColumnName("ID");
+            e.Property(x => x.UserId).HasColumnName("USER_ID");
+            e.Property(x => x.Amount).HasColumnName("AMOUNT").HasPrecision(18, 2);
+            e.Property(x => x.CategoryId).HasColumnName("CATEGORY_ID");
+            e.Property(x => x.Category).HasColumnName("CATEGORY").HasMaxLength(40);
+            e.Property(x => x.PersonId).HasColumnName("PERSON_ID");
+            e.Property(x => x.Source).HasColumnName("SOURCE").HasMaxLength(80);
+            e.Property(x => x.Date).HasColumnName("MONEY_CAME_DATE");
+            e.Property(x => x.PaymentMethod).HasColumnName("PAYMENT_METHOD").HasMaxLength(30);
+            e.Property(x => x.Notes).HasColumnName("NOTES").HasMaxLength(300);
+            e.Property(x => x.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(x => x.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(x => x.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(x => x.UpdatedDate).HasColumnName("UPDATED_DATE");
+            e.Property(x => x.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
             e.HasQueryFilter(x => x.IsActive);
             e.HasIndex(x => x.UserId);
         });
 
         modelBuilder.Entity<Person>(e =>
         {
+            e.ToTable("PEOPLE", "Config");
             e.HasKey(x => x.Id);
-            e.Property(x => x.Name).HasMaxLength(80).IsRequired();
-            e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
-            e.Property(x => x.UpdatedBy).HasMaxLength(100);
-            e.Property(x => x.IsActive).HasDefaultValue(true);
+            e.Property(x => x.Id).HasColumnName("ID");
+            e.Property(x => x.UserId).HasColumnName("USER_ID");
+            e.Property(x => x.Name).HasColumnName("NAME").HasMaxLength(80).IsRequired();
+            e.Property(x => x.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(x => x.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(x => x.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(x => x.UpdatedDate).HasColumnName("UPDATED_DATE");
+            e.Property(x => x.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
             e.HasQueryFilter(x => x.IsActive);
             e.HasIndex(x => x.UserId);
         });
