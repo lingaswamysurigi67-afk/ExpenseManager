@@ -34,7 +34,7 @@ public class AuthController : ControllerBase
 
         var user = new User { UserName = userName, Email = email };
         user.PasswordHash = _hasher.HashPassword(user, request.Password);
-        user.CreatedBy = "self";
+        user.CreatedBy = AuditUsers.Self;
         user.CreatedDate = DateTime.UtcNow;
 
         _db.Users.Add(user);
@@ -84,7 +84,7 @@ public class AuthController : ControllerBase
             return NotFound(new { message = "No account matches that username and email." });
 
         user.PasswordHash = _hasher.HashPassword(user, request.NewPassword);
-        user.UpdatedBy = "self";
+        user.UpdatedBy = AuditUsers.Self;
         user.UpdatedDate = DateTime.UtcNow;
         await _db.SaveChangesAsync();
 

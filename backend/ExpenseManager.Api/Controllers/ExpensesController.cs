@@ -32,14 +32,14 @@ public class ExpensesController : ControllerBase
         var list = await query
             .OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedDate)
             .ToListAsync();
-        return Ok(list);
+        return Ok(list.Select(ExpenseResponse.From));
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetOne(int id)
     {
         var expense = await _db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
-        return expense is null ? NotFound() : Ok(expense);
+        return expense is null ? NotFound() : Ok(ExpenseResponse.From(expense));
     }
 
     [HttpPost]
@@ -69,7 +69,7 @@ public class ExpensesController : ControllerBase
 
         _db.Expenses.Add(expense);
         await _db.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetOne), new { id = expense.Id }, expense);
+        return CreatedAtAction(nameof(GetOne), new { id = expense.Id }, ExpenseResponse.From(expense));
     }
 
     [HttpPut("{id:int}")]
@@ -97,7 +97,7 @@ public class ExpensesController : ControllerBase
         expense.UpdatedDate = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
-        return Ok(expense);
+        return Ok(ExpenseResponse.From(expense));
     }
 
     [HttpDelete("{id:int}")]

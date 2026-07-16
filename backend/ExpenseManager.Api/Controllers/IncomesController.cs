@@ -32,14 +32,14 @@ public class IncomesController : ControllerBase
         var list = await query
             .OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedDate)
             .ToListAsync();
-        return Ok(list);
+        return Ok(list.Select(IncomeResponse.From));
     }
 
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetOne(int id)
     {
         var income = await _db.Incomes.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
-        return income is null ? NotFound() : Ok(income);
+        return income is null ? NotFound() : Ok(IncomeResponse.From(income));
     }
 
     [HttpPost]
@@ -70,7 +70,7 @@ public class IncomesController : ControllerBase
 
         _db.Incomes.Add(income);
         await _db.SaveChangesAsync();
-        return CreatedAtAction(nameof(GetOne), new { id = income.Id }, income);
+        return CreatedAtAction(nameof(GetOne), new { id = income.Id }, IncomeResponse.From(income));
     }
 
     [HttpPut("{id:int}")]
@@ -99,7 +99,7 @@ public class IncomesController : ControllerBase
         income.UpdatedDate = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
-        return Ok(income);
+        return Ok(IncomeResponse.From(income));
     }
 
     [HttpDelete("{id:int}")]

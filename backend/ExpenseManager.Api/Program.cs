@@ -1,4 +1,5 @@
 using System.Text;
+using ExpenseManager.Api;
 using ExpenseManager.Api.Data;
 using ExpenseManager.Api.Models;
 using ExpenseManager.Api.Services;
@@ -14,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Services
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddSingleton<TokenService>();
@@ -53,6 +55,8 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+app.UseExceptionHandler();
+
 // Apply migrations (and seed default categories) on startup
 using (var scope = app.Services.CreateScope())
 {
@@ -63,14 +67,14 @@ using (var scope = app.Services.CreateScope())
     if (!await db.Categories.AnyAsync(c => c.IsDefault))
     {
         db.Categories.AddRange(
-            new Category { Name = "Food & Dining",     Color = "#ef4444", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Groceries",         Color = "#22c55e", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Transport",         Color = "#3b82f6", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Bills & Utilities", Color = "#f59e0b", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Shopping",          Color = "#a855f7", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Entertainment",     Color = "#ec4899", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Health",            Color = "#14b8a6", IsDefault = true, CreatedBy = "system" },
-            new Category { Name = "Other",             Color = "#64748b", IsDefault = true, CreatedBy = "system" }
+            new Category { Name = "Food & Dining",     Color = "#ef4444", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Groceries",         Color = "#22c55e", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Transport",         Color = "#3b82f6", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Bills & Utilities", Color = "#f59e0b", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Shopping",          Color = "#a855f7", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Entertainment",     Color = "#ec4899", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Health",            Color = "#14b8a6", IsDefault = true, CreatedBy = AuditUsers.System },
+            new Category { Name = "Other",             Color = "#64748b", IsDefault = true, CreatedBy = AuditUsers.System }
         );
         await db.SaveChangesAsync();
     }
