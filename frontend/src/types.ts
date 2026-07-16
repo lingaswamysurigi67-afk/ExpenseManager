@@ -38,7 +38,6 @@ export interface Expense {
   categoryId: number
   category: string
   personId: number | null
-  personName: string
   date: string
   paymentMethod: string
   notes: string
@@ -55,7 +54,6 @@ export interface Income {
   categoryId: number
   category: string
   personId: number | null
-  personName: string
   source: string
   date: string
   paymentMethod: string

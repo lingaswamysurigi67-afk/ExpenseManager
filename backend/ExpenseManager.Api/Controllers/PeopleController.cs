@@ -68,12 +68,6 @@ public class PeopleController : ControllerBase
         person.UpdatedBy = UserId;
         person.UpdatedDate = DateTime.UtcNow;
 
-        // Keep the denormalized name in sync on any referencing rows.
-        var exps = await _db.Expenses.Where(e => e.UserId == UserId && e.PersonId == id).ToListAsync();
-        foreach (var e in exps) e.PersonName = name;
-        var incs = await _db.Incomes.Where(i => i.UserId == UserId && i.PersonId == id).ToListAsync();
-        foreach (var i in incs) i.PersonName = name;
-
         await _db.SaveChangesAsync();
         return Ok(person);
     }

@@ -8,7 +8,6 @@ public class Expense
     public int CategoryId { get; set; }
     public string Category { get; set; } = string.Empty;
     public int? PersonId { get; set; }
-    public string PersonName { get; set; } = string.Empty;
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public string PaymentMethod { get; set; } = "Cash";
     public string Notes { get; set; } = string.Empty;

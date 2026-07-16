@@ -60,7 +60,6 @@ public class ExpensesController : ControllerBase
             CategoryId = category.Id,
             Category = category.Name,
             PersonId = person.Id,
-            PersonName = person.Name,
             Date = request.Date,
             PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
             Notes = request.Notes?.Trim() ?? string.Empty,
@@ -91,7 +90,6 @@ public class ExpensesController : ControllerBase
         expense.CategoryId = category.Id;
         expense.Category = category.Name;
         expense.PersonId = person.Id;
-        expense.PersonName = person.Name;
         expense.Date = request.Date;
         expense.PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod;
         expense.Notes = request.Notes?.Trim() ?? string.Empty;

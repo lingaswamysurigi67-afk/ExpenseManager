@@ -45,7 +45,7 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.Property(x => x.Category).HasMaxLength(40);
-            e.Property(x => x.PersonName).HasMaxLength(80);
+            e.Property(x => x.Date).HasColumnName("Expenditure Date");
             e.Property(x => x.PaymentMethod).HasMaxLength(30);
             e.Property(x => x.Notes).HasMaxLength(300);
             e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
@@ -60,8 +60,8 @@ public class AppDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Amount).HasPrecision(18, 2);
             e.Property(x => x.Category).HasMaxLength(40);
-            e.Property(x => x.PersonName).HasMaxLength(80);
             e.Property(x => x.Source).HasMaxLength(80);
+            e.Property(x => x.Date).HasColumnName("Money Came Date");
             e.Property(x => x.PaymentMethod).HasMaxLength(30);
             e.Property(x => x.Notes).HasMaxLength(300);
             e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();

@@ -61,12 +61,13 @@ export default function Expenses() {
   }, [filters])
 
   const catColor = (id: number) => categories.find((c) => c.id === id)?.color || '#64748b'
+  const personName = (id: number | null) => people.find((p) => p.id === id)?.name || ''
 
   const sortVal = (e: Expense, key: string): string | number => {
     switch (key) {
       case 'date': return new Date(e.date).getTime()
       case 'amount': return Number(e.amount)
-      case 'person': return (e.personName || '').toLowerCase()
+      case 'person': return personName(e.personId).toLowerCase()
       case 'category': return (e.category || '').toLowerCase()
       default: return 0
     }
@@ -77,7 +78,7 @@ export default function Expenses() {
     let rows = expenses
     if (q) {
       rows = rows.filter((e) =>
-        (e.personName || '').toLowerCase().includes(q) ||
+        personName(e.personId).toLowerCase().includes(q) ||
         (e.category || '').toLowerCase().includes(q) ||
         (e.notes || '').toLowerCase().includes(q) ||
         (e.paymentMethod || '').toLowerCase().includes(q)
@@ -251,7 +252,7 @@ export default function Expenses() {
                       <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleRow(e.id)} />
                     </td>
                     <td>{formatDate(e.date)}</td>
-                    <td style={{ fontWeight: 600 }}>{e.personName || '—'}</td>
+                    <td style={{ fontWeight: 600 }}>{personName(e.personId) || '—'}</td>
                     <td>
                       <span className="tag" style={{ background: catColor(e.categoryId) + '22', color: 'var(--text)' }}>
                         <span className="dot" style={{ background: catColor(e.categoryId) }} />
