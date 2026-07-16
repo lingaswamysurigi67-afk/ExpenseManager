@@ -276,6 +276,31 @@ td .tag { padding: 3px 10px; font-size: 13px; }
 .modal-backdrop { position: fixed; inset: 0; background: rgba(31, 36, 48, 0.35); backdrop-filter: blur(3px); display: grid; place-items: center; z-index: 50; padding: 20px; animation: fade 0.15s ease; }
 .modal { width: 100%; max-width: 520px; padding: 32px; }
 .confirm-modal { max-width: 420px; }
+.calc-modal { max-width: 340px; padding: 22px; }
+
+/* ---------- Calculator ---------- */
+.calc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.calc-display {
+  background: var(--glass-strong); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px 16px; margin-bottom: 14px; text-align: right; overflow: hidden;
+}
+.calc-expr { color: var(--text-dim); font-size: 14px; min-height: 18px; }
+.calc-value {
+  color: var(--text); font-size: 34px; font-weight: 700; line-height: 1.15;
+  overflow-x: auto; white-space: nowrap;
+}
+.calc-keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.calc-btn {
+  border: 1px solid var(--border); border-radius: 12px; cursor: pointer;
+  padding: 0; height: 56px; font-size: 20px; font-weight: 600;
+  background: #fff; color: var(--text);
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+.calc-btn:hover { filter: brightness(0.97); transform: translateY(-1px); }
+.calc-btn:active { transform: translateY(0); }
+.calc-btn.fn { background: var(--glass-strong); color: var(--text-dim); }
+.calc-btn.op { background: rgba(109, 94, 252, 0.12); color: var(--primary); border-color: rgba(109, 94, 252, 0.25); }
+.calc-btn.eq { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #fff; border: none; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 .fade-up { animation: fadeUp 0.3s ease both; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
@@ -322,4 +347,6 @@ td .tag { padding: 3px 10px; font-size: 13px; }
   .pager { justify-content: space-between; gap: 12px 16px; }
   .modal { padding: 20px; }
   .modal-backdrop { padding: 12px; }
+  .calc-btn { height: 52px; font-size: 19px; }
+  .calc-value { font-size: 30px; }
 }

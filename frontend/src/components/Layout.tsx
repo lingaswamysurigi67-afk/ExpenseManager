@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Calculator from './Calculator'
 
 interface NavItem {
   to: string
@@ -23,6 +24,7 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [calcOpen, setCalcOpen] = useState(false)
   const initials = (user?.userName || '?').slice(0, 2).toUpperCase()
 
   const closeMenu = () => setMenuOpen(false)
@@ -75,12 +77,15 @@ export default function Layout() {
             </div>
           </div>
           <div className="user-chip">
+            <button className="btn ghost icon" title="Calculator" onClick={() => setCalcOpen(true)} aria-label="Open calculator">🧮</button>
             <span style={{ fontSize: 13, color: 'var(--text-dim)' }}>{user?.email}</span>
             <div className="avatar">{initials}</div>
           </div>
         </div>
         <Outlet />
       </main>
+
+      <Calculator open={calcOpen} onClose={() => setCalcOpen(false)} />
     </div>
   )
 }
