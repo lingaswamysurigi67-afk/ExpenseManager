@@ -14,6 +14,7 @@ const links: NavItem[] = [
   { to: '/expenses', label: 'Expenses', icon: '🧾' },
   { to: '/income', label: 'Income', icon: '💸' },
   { to: '/people', label: 'People', icon: '👥' },
+  { to: '/receivables', label: 'Receivables', icon: '🧧' },
   { to: '/categories', label: 'Categories', icon: '🏷️' },
   { to: '/reports', label: 'Reports', icon: '📈' },
 ]

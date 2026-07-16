@@ -72,4 +72,69 @@ public class ReportsController : ControllerBase
 
         return Ok(summary);
     }
+
+    [HttpGet("receivables")]
+    public async Task<IActionResult> Receivables([FromQuery] int? year, [FromQuery] int? month)
+    {
+        var expenseQuery = _db.Expenses.Where(e => e.UserId == UserId && e.PersonId != null);
+        var incomeQuery = _db.Incomes.Where(i => i.UserId == UserId && i.PersonId != null);
+
+        if (year.HasValue)
+        {
+            expenseQuery = expenseQuery.Where(e => e.Date.Year == year.Value);
+            incomeQuery = incomeQuery.Where(i => i.Date.Year == year.Value);
+        }
+        if (month.HasValue)
+        {
+            expenseQuery = expenseQuery.Where(e => e.Date.Month == month.Value);
+            incomeQuery = incomeQuery.Where(i => i.Date.Month == month.Value);
+        }
+
+        var given = await expenseQuery
+            .GroupBy(e => e.PersonId!.Value)
+            .Select(g => new { PersonId = g.Key, Total = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        var returned = await incomeQuery
+            .GroupBy(i => i.PersonId!.Value)
+            .Select(g => new { PersonId = g.Key, Total = g.Sum(x => x.Amount) })
+            .ToListAsync();
+
+        var givenMap = given.ToDictionary(x => x.PersonId, x => x.Total);
+        var returnedMap = returned.ToDictionary(x => x.PersonId, x => x.Total);
+
+        var personIds = givenMap.Keys.Union(returnedMap.Keys).ToList();
+
+        var people = await _db.People
+            .Where(p => p.UserId == UserId && personIds.Contains(p.Id))
+            .ToDictionaryAsync(p => p.Id, p => p.Name);
+
+        var rows = personIds
+            .Select(id =>
+            {
+                var g = givenMap.TryGetValue(id, out var gv) ? gv : 0m;
+                var r = returnedMap.TryGetValue(id, out var rv) ? rv : 0m;
+                return new ReceivableRow
+                {
+                    PersonId = id,
+                    Person = people.TryGetValue(id, out var name) ? name : "Unknown",
+                    Given = g,
+                    Returned = r,
+                    Remaining = g - r
+                };
+            })
+            .Where(row => row.Remaining != 0)
+            .OrderByDescending(row => row.Remaining)
+            .ToList();
+
+        var response = new ReceivablesResponse
+        {
+            TotalGiven = rows.Sum(r => r.Given),
+            TotalReturned = rows.Sum(r => r.Returned),
+            TotalRemaining = rows.Sum(r => r.Remaining),
+            Rows = rows
+        };
+
+        return Ok(response);
+    }
 }

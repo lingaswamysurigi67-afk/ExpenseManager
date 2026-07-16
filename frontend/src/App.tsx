@@ -11,6 +11,7 @@ import Income from './pages/Income'
 import People from './pages/People'
 import Categories from './pages/Categories'
 import Reports from './pages/Reports'
+import Receivables from './pages/Receivables'
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, ready } = useAuth()
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="expenses" element={<Expenses />} />
         <Route path="income" element={<Income />} />
         <Route path="people" element={<People />} />
+        <Route path="receivables" element={<Receivables />} />
         <Route path="categories" element={<Categories />} />
         <Route path="reports" element={<Reports />} />
       </Route>

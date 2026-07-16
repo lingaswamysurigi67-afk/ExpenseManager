@@ -63,7 +63,7 @@ export default function Reports() {
         <div className="empty"><span className="spinner" /></div>
       ) : (
         <>
-          <div className="grid stats" style={{ gridTemplateColumns: 'repeat(3,1fr)', marginBottom: 18 }}>
+          <div className="grid stats cols-3" style={{ marginBottom: 18 }}>
             <div className="card stat">
               <div className="label">Total in range</div>
               <div className="value">{currency(summary.total)}</div>

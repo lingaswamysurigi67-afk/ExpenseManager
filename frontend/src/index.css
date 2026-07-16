@@ -182,6 +182,7 @@ select.input option { color: #000; }
 /* ---------- Stat cards ---------- */
 .grid { display: grid; gap: 20px; }
 .stats { grid-template-columns: repeat(4, 1fr); }
+.stats.cols-3 { grid-template-columns: repeat(3, 1fr); }
 .stat { padding: 24px; position: relative; overflow: hidden; }
 .stat .label { color: var(--text-dim); font-size: 15px; }
 .stat .value { font-size: 30px; font-weight: 700; margin-top: 8px; color: var(--text); }
@@ -291,6 +292,7 @@ td .tag { padding: 3px 10px; font-size: 13px; }
 
 @media (max-width: 900px) {
   .stats { grid-template-columns: repeat(2, 1fr); }
+  .stats.cols-3 { grid-template-columns: repeat(3, 1fr); }
   .cols-2 { grid-template-columns: 1fr; }
 
   /* Sidebar becomes a slide-in drawer instead of disappearing */
@@ -313,6 +315,7 @@ td .tag { padding: 3px 10px; font-size: 13px; }
 
 @media (max-width: 560px) {
   .stats { grid-template-columns: 1fr; }
+  .stats.cols-3 { grid-template-columns: 1fr; }
   .main { padding: 16px 12px; }
   .card { padding: 18px; }
   .filters .field { min-width: 130px; flex: 1; }

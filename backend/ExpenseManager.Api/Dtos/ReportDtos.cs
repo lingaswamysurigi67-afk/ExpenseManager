@@ -29,3 +29,20 @@ public class SummaryResponse
     public List<CategoryBreakdown> ByCategory { get; set; } = new();
     public List<MonthlyBreakdown> ByMonth { get; set; } = new();
 }
+
+public class ReceivableRow
+{
+    public int PersonId { get; set; }
+    public string Person { get; set; } = string.Empty;
+    public decimal Given { get; set; }
+    public decimal Returned { get; set; }
+    public decimal Remaining { get; set; }
+}
+
+public class ReceivablesResponse
+{
+    public decimal TotalGiven { get; set; }
+    public decimal TotalReturned { get; set; }
+    public decimal TotalRemaining { get; set; }
+    public List<ReceivableRow> Rows { get; set; } = new();
+}

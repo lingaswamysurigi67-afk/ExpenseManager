@@ -109,3 +109,18 @@ export interface Summary {
   byCategory: CategoryBreakdown[]
   byMonth: MonthlyBreakdown[]
 }
+
+export interface ReceivableRow {
+  personId: number
+  person: string
+  given: number
+  returned: number
+  remaining: number
+}
+
+export interface Receivables {
+  totalGiven: number
+  totalReturned: number
+  totalRemaining: number
+  rows: ReceivableRow[]
+}
