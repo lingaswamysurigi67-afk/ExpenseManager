@@ -110,7 +110,9 @@ public class IncomesController : ControllerBase
         var income = await _db.Incomes.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
         if (income is null) return NotFound();
 
-        _db.Incomes.Remove(income);
+        income.IsActive = false;
+        income.UpdatedBy = UserId;
+        income.UpdatedDate = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return NoContent();
     }
@@ -125,7 +127,12 @@ public class IncomesController : ControllerBase
             .Where(e => e.UserId == UserId && request.Ids.Contains(e.Id))
             .ToListAsync();
 
-        _db.Incomes.RemoveRange(toDelete);
+        foreach (var income in toDelete)
+        {
+            income.IsActive = false;
+            income.UpdatedBy = UserId;
+            income.UpdatedDate = DateTime.UtcNow;
+        }
         await _db.SaveChangesAsync();
         return Ok(new { deleted = toDelete.Count });
     }

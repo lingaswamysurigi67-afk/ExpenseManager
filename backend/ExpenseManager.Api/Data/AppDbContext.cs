@@ -36,6 +36,8 @@ public class AppDbContext : DbContext
             e.Property(c => c.Color).HasMaxLength(20);
             e.Property(c => c.CreatedBy).HasMaxLength(100).IsRequired();
             e.Property(c => c.UpdatedBy).HasMaxLength(100);
+            e.Property(c => c.IsActive).HasDefaultValue(true);
+            e.HasQueryFilter(c => c.IsActive);
         });
 
         modelBuilder.Entity<Expense>(e =>
@@ -48,6 +50,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.Notes).HasMaxLength(300);
             e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
             e.Property(x => x.UpdatedBy).HasMaxLength(100);
+            e.Property(x => x.IsActive).HasDefaultValue(true);
+            e.HasQueryFilter(x => x.IsActive);
             e.HasIndex(x => x.UserId);
         });
 
@@ -62,6 +66,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.Notes).HasMaxLength(300);
             e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
             e.Property(x => x.UpdatedBy).HasMaxLength(100);
+            e.Property(x => x.IsActive).HasDefaultValue(true);
+            e.HasQueryFilter(x => x.IsActive);
             e.HasIndex(x => x.UserId);
         });
 
@@ -71,6 +77,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.Name).HasMaxLength(80).IsRequired();
             e.Property(x => x.CreatedBy).HasMaxLength(100).IsRequired();
             e.Property(x => x.UpdatedBy).HasMaxLength(100);
+            e.Property(x => x.IsActive).HasDefaultValue(true);
+            e.HasQueryFilter(x => x.IsActive);
             e.HasIndex(x => x.UserId);
         });
     }

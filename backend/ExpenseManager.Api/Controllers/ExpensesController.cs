@@ -108,7 +108,9 @@ public class ExpensesController : ControllerBase
         var expense = await _db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
         if (expense is null) return NotFound();
 
-        _db.Expenses.Remove(expense);
+        expense.IsActive = false;
+        expense.UpdatedBy = UserId;
+        expense.UpdatedDate = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return NoContent();
     }
@@ -123,7 +125,12 @@ public class ExpensesController : ControllerBase
             .Where(e => e.UserId == UserId && request.Ids.Contains(e.Id))
             .ToListAsync();
 
-        _db.Expenses.RemoveRange(toDelete);
+        foreach (var expense in toDelete)
+        {
+            expense.IsActive = false;
+            expense.UpdatedBy = UserId;
+            expense.UpdatedDate = DateTime.UtcNow;
+        }
         await _db.SaveChangesAsync();
         return Ok(new { deleted = toDelete.Count });
     }

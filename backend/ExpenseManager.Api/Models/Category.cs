@@ -10,4 +10,5 @@ public class Category
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public string? UpdatedBy { get; set; }
     public DateTime? UpdatedDate { get; set; }
+    public bool IsActive { get; set; } = true;
 }
