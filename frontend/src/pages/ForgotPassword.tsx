@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getErrorMessage } from '../utils'
 
 export default function ForgotPassword() {
-  const { resetPassword } = useAuth()
-  const navigate = useNavigate()
-  const [form, setForm] = useState({ userName: '', email: '', password: '', confirm: '' })
+  const { requestPasswordReset } = useAuth()
+  const [userNameOrEmail, setUserNameOrEmail] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
@@ -16,21 +15,12 @@ export default function ForgotPassword() {
     e.preventDefault()
     setError('')
     setSuccess('')
-    if (form.password !== form.confirm) {
-      setError('Passwords do not match.')
-      return
-    }
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters.')
-      return
-    }
     setLoading(true)
     try {
-      const message = await resetPassword(form.userName.trim(), form.email.trim(), form.password)
-      setSuccess(message || 'Password has been reset. Redirecting to sign in…')
-      setTimeout(() => navigate('/login'), 1500)
+      const message = await requestPasswordReset(userNameOrEmail.trim())
+      setSuccess(message || 'If an account matches, a password reset link has been sent to its email.')
     } catch (err) {
-      setError(getErrorMessage(err, 'Unable to reset password. Please try again.'))
+      setError(getErrorMessage(err, 'Unable to send reset link. Please try again.'))
     } finally {
       setLoading(false)
     }
@@ -48,59 +38,25 @@ export default function ForgotPassword() {
         </div>
 
         <h2>Reset your password</h2>
-        <p className="muted">Confirm your username and email, then choose a new password.</p>
+        <p className="muted">Enter your username or email and we'll send a reset link to your email.</p>
 
         {error && <div className="error-banner">{error}</div>}
         {success && <div className="success-banner">{success}</div>}
 
         <form onSubmit={submit}>
           <div className="field">
-            <label>Username</label>
+            <label>Username or Email</label>
             <input
               className="input"
-              value={form.userName}
-              onChange={(e) => setForm({ ...form, userName: e.target.value })}
-              placeholder="janedoe"
-              autoFocus
-              required
-              minLength={3}
-            />
-          </div>
-          <div className="field">
-            <label>Email</label>
-            <input
-              className="input"
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              value={userNameOrEmail}
+              onChange={(e) => setUserNameOrEmail(e.target.value)}
               placeholder="you@example.com"
-              required
-            />
-          </div>
-          <div className="field">
-            <label>New password</label>
-            <input
-              className="input"
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              placeholder="At least 6 characters"
-              required
-            />
-          </div>
-          <div className="field">
-            <label>Confirm new password</label>
-            <input
-              className="input"
-              type="password"
-              value={form.confirm}
-              onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-              placeholder="Repeat new password"
+              autoFocus
               required
             />
           </div>
           <button className="btn" style={{ width: '100%', marginTop: 6 }} disabled={loading}>
-            {loading ? <span className="spinner" /> : 'Reset password'}
+            {loading ? <span className="spinner" /> : 'Send reset link'}
           </button>
         </form>
 
