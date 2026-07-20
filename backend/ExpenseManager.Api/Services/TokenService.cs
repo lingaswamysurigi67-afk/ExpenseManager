@@ -20,14 +20,17 @@ public class TokenService
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         var expiresAt = DateTime.UtcNow.AddHours(int.Parse(jwt["ExpiresHours"] ?? "12"));
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-            new Claim(ClaimTypes.NameIdentifier, user.Id),
-            new Claim(ClaimTypes.Name, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            new(JwtRegisteredClaimNames.Sub, user.Id),
+            new(ClaimTypes.NameIdentifier, user.Id),
+            new(ClaimTypes.Name, user.UserName),
+            new(JwtRegisteredClaimNames.Email, user.Email),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
+
+        if (IsAdmin(user.Email))
+            claims.Add(new Claim(ClaimTypes.Role, "Admin"));
 
         var token = new JwtSecurityToken(
             issuer: jwt["Issuer"],
@@ -37,6 +40,13 @@ public class TokenService
             signingCredentials: creds);
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expiresAt);
+    }
+
+    // Admins are designated by email in configuration ("Admin:Emails"); no DB flag required.
+    public bool IsAdmin(string email)
+    {
+        var admins = _config.GetSection("Admin:Emails").Get<string[]>() ?? Array.Empty<string>();
+        return admins.Any(a => string.Equals(a?.Trim(), email?.Trim(), StringComparison.OrdinalIgnoreCase));
     }
 
     // A short-lived, signed, single-purpose token for password resets.

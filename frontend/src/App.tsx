@@ -13,11 +13,18 @@ import People from './pages/People'
 import Categories from './pages/Categories'
 import Reports from './pages/Reports'
 import Receivables from './pages/Receivables'
+import Users from './pages/Users'
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, ready } = useAuth()
   if (!ready) return null
   return user ? <>{children}</> : <Navigate to="/login" replace />
+}
+
+function AdminOnly({ children }: { children: ReactNode }) {
+  const { user, ready } = useAuth()
+  if (!ready) return null
+  return user?.isAdmin ? <>{children}</> : <Navigate to="/" replace />
 }
 
 export default function App() {
@@ -45,6 +52,7 @@ export default function App() {
         <Route path="receivables" element={<Receivables />} />
         <Route path="categories" element={<Categories />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

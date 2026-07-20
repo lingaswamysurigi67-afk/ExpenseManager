@@ -27,6 +27,10 @@ export default function Layout() {
   const [calcOpen, setCalcOpen] = useState(false)
   const initials = (user?.userName || '?').slice(0, 2).toUpperCase()
 
+  const navItems = user?.isAdmin
+    ? [...links, { to: '/users', label: 'Users', icon: '🛡️' } as NavItem]
+    : links
+
   const closeMenu = () => setMenuOpen(false)
 
   const handleLogout = () => {
@@ -47,7 +51,7 @@ export default function Layout() {
           </div>
         </div>
 
-        {links.map((l) => (
+        {navItems.map((l) => (
           <NavLink
             key={l.to}
             to={l.to}

@@ -28,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const persist = (data: AuthResponse) => {
     localStorage.setItem('em_token', data.token)
-    const u: AuthUser = { userName: data.userName, email: data.email }
+    const u: AuthUser = { userName: data.userName, email: data.email, isAdmin: data.isAdmin }
     localStorage.setItem('em_user', JSON.stringify(u))
     setUser(u)
   }

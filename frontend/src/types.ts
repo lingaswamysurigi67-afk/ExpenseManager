@@ -1,12 +1,14 @@
 export interface AuthUser {
   userName: string
   email: string
+  isAdmin: boolean
 }
 
 export interface AuthResponse {
   token: string
   userName: string
   email: string
+  isAdmin: boolean
   expiresAt: string
 }
 
@@ -117,10 +119,22 @@ export interface ReceivableRow {
   returned: number
   remaining: number
 }
-
 export interface Receivables {
   totalGiven: number
   totalReturned: number
   totalRemaining: number
   rows: ReceivableRow[]
+}
+
+export interface AdminUserRow {
+  id: string
+  userName: string
+  email: string
+  createdDate: string
+  updatedDate: string | null
+}
+
+export interface AdminUsersResponse {
+  totalUsers: number
+  users: AdminUserRow[]
 }
