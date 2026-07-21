@@ -179,6 +179,8 @@ export interface FeeTypeBreakdown {
   feeType: string
   total: number
   count: number
+  increaseAmount: number | null
+  increasePercentage: number | null
 }
 
 export interface SubCategorySpending {

@@ -70,6 +70,8 @@ public class FeeTypeBreakdown
     public string FeeType { get; set; } = string.Empty;
     public decimal Total { get; set; }
     public int Count { get; set; }
+    public decimal? IncreaseAmount { get; set; }
+    public double? IncreasePercentage { get; set; }
 }
 
 public class SubCategorySpendingResponse

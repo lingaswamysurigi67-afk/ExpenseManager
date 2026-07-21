@@ -136,11 +136,22 @@ export default function ClassSpending() {
                           {r.subCategory}
                           {r.fees.length > 0 && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4, fontWeight: 400 }}>
-                              {r.fees.map((f) => (
-                                <span key={f.feeTypeId ?? f.feeType} style={{ fontSize: 12, color: 'var(--text-dim)' }}>
-                                  {f.feeType}: {currency(f.total)}
-                                </span>
-                              ))}
+                              {r.fees.map((f) => {
+                                const fUp = (f.increaseAmount ?? 0) > 0
+                                const fDown = (f.increaseAmount ?? 0) < 0
+                                const fColor = fUp ? '#ef4444' : fDown ? '#22c55e' : 'var(--text-dim)'
+                                return (
+                                  <span key={f.feeTypeId ?? f.feeType} style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                                    {f.feeType}: {currency(f.total)}
+                                    {f.increaseAmount != null && (
+                                      <span style={{ color: fColor }}>
+                                        {' '}({fUp ? '+' : ''}{currency(f.increaseAmount)}
+                                        {f.increasePercentage != null && ` · ${f.increasePercentage > 0 ? '+' : ''}${f.increasePercentage}%`})
+                                      </span>
+                                    )}
+                                  </span>
+                                )
+                              })}
                             </div>
                           )}
                         </td>

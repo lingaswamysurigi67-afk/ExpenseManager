@@ -219,6 +219,7 @@ public class ReportsController : ControllerBase
 
         var rows = new List<SubCategorySpendingRow>();
         decimal? prev = null;
+        Dictionary<int, decimal> prevFeeTotals = new();
         foreach (var g in ordered)
         {
             decimal? incAmount = prev is null ? null : g.Total - prev.Value;
@@ -226,17 +227,33 @@ public class ReportsController : ControllerBase
                 ? null
                 : Math.Round((double)((g.Total - prev.Value) / prev.Value) * 100, 1);
 
-            var fees = feeGroups
+            var feeRows = feeGroups
                 .Where(f => f.SubCategoryId == g.SubCategoryId)
                 .OrderByDescending(f => f.Total)
-                .Select(f => new FeeTypeBreakdown
+                .ToList();
+
+            var fees = new List<FeeTypeBreakdown>();
+            foreach (var f in feeRows)
+            {
+                var key = f.FeeTypeId ?? 0;
+                decimal? feeInc = null;
+                double? feeIncPct = null;
+                if (prev is not null && prevFeeTotals.TryGetValue(key, out var pv))
+                {
+                    feeInc = f.Total - pv;
+                    feeIncPct = pv == 0 ? null : Math.Round((double)((f.Total - pv) / pv) * 100, 1);
+                }
+
+                fees.Add(new FeeTypeBreakdown
                 {
                     FeeTypeId = f.FeeTypeId,
                     FeeType = f.FeeType ?? string.Empty,
                     Total = f.Total,
-                    Count = f.Count
-                })
-                .ToList();
+                    Count = f.Count,
+                    IncreaseAmount = feeInc,
+                    IncreasePercentage = feeIncPct
+                });
+            }
 
             rows.Add(new SubCategorySpendingRow
             {
@@ -252,6 +269,7 @@ public class ReportsController : ControllerBase
             });
 
             prev = g.Total;
+            prevFeeTotals = feeRows.ToDictionary(f => f.FeeTypeId ?? 0, f => f.Total);
         }
 
         return Ok(new SubCategorySpendingResponse
