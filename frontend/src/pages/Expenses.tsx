@@ -252,6 +252,7 @@ export default function Expenses() {
                   <SortHeader label="Date" sortKey="date" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <SortHeader label="Expenditure On" sortKey="person" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <SortHeader label="Category" sortKey="category" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
+                  <th>Sub-category</th>
                   <th>Notes</th>
                   <th>Method</th>
                   <SortHeader label="Amount" sortKey="amount" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} style={{ textAlign: 'right' }} />
@@ -271,10 +272,8 @@ export default function Expenses() {
                         <span className="dot" style={{ background: catColor(e.categoryId) }} />
                         {e.category}
                       </span>
-                      {e.subCategory && (
-                        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>{e.subCategory}</div>
-                      )}
                     </td>
+                    <td style={{ color: 'var(--text-dim)' }}>{e.subCategory || '—'}</td>
                     <td style={{ color: 'var(--text-dim)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {e.notes || '—'}
                     </td>
