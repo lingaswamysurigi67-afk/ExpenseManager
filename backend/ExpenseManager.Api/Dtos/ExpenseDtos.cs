@@ -116,21 +116,34 @@ public class FeeTypeRequest
 public class FeeTypeResponse
 {
     public int Id { get; set; }
-    public int SubCategoryId { get; set; }
     public string Name { get; set; } = string.Empty;
     public string CreatedBy { get; set; } = string.Empty;
     public DateTime CreatedDate { get; set; }
     public string? UpdatedBy { get; set; }
     public DateTime? UpdatedDate { get; set; }
 
-    public static FeeTypeResponse From(FeeType f) => new()
+    public static FeeTypeResponse From(FeeTypeCatalog f) => new()
     {
         Id = f.Id,
-        SubCategoryId = f.SubCategoryId,
         Name = f.Name,
         CreatedBy = f.CreatedBy,
         CreatedDate = f.CreatedDate,
         UpdatedBy = f.UpdatedBy,
         UpdatedDate = f.UpdatedDate
     };
+}
+
+// One assignment row: a catalog fee type linked to a sub-category (name denormalized for display).
+public class SubCategoryFeeTypeResponse
+{
+    public int Id { get; set; }
+    public int SubCategoryId { get; set; }
+    public int FeeTypeCatalogId { get; set; }
+    public string FeeType { get; set; } = string.Empty;
+}
+
+// Replace the full set of catalog fee types assigned to a sub-category.
+public class SubCategoryFeeTypeAssignRequest
+{
+    public List<int> FeeTypeCatalogIds { get; set; } = new();
 }

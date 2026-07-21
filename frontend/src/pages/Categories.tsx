@@ -3,14 +3,15 @@ import type { FormEvent } from 'react'
 import client from '../api/client'
 import { getErrorMessage } from '../utils'
 import ConfirmDialog from '../components/ConfirmDialog'
-import type { Category, SubCategory, FeeType } from '../types'
+import type { Category, SubCategory, FeeType, SubCategoryFeeType } from '../types'
 
 const swatches = ['#ef4444', '#f59e0b', '#22c55e', '#14b8a6', '#3b82f6', '#6d5efc', '#a855f7', '#ec4899', '#64748b']
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
-  const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
+  const [feeCatalog, setFeeCatalog] = useState<FeeType[]>([])
+  const [subFeeMappings, setSubFeeMappings] = useState<SubCategoryFeeType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', color: swatches[5] })
@@ -23,22 +24,26 @@ export default function Categories() {
   const [subSaving, setSubSaving] = useState(false)
 
   const [expandedSubId, setExpandedSubId] = useState<number | null>(null)
-  const [feeName, setFeeName] = useState('')
-  const [editingFeeId, setEditingFeeId] = useState<number | null>(null)
-  const [feeSaving, setFeeSaving] = useState(false)
+  const [assigningSubId, setAssigningSubId] = useState<number | null>(null)
+
+  const [catalogName, setCatalogName] = useState('')
+  const [editingCatalogId, setEditingCatalogId] = useState<number | null>(null)
+  const [catalogSaving, setCatalogSaving] = useState(false)
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => Promise<void> } | null>(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [cat, sub, fee] = await Promise.all([
+      const [cat, sub, fee, map] = await Promise.all([
         client.get<Category[]>('/categories'),
         client.get<SubCategory[]>('/subcategories'),
         client.get<FeeType[]>('/feetypes'),
+        client.get<SubCategoryFeeType[]>('/subcategoryfeetypes'),
       ])
       setCategories(cat.data)
       setSubCategories(sub.data)
-      setFeeTypes(fee.data)
+      setFeeCatalog(fee.data)
+      setSubFeeMappings(map.data)
     } catch {
       setError('Failed to load categories.')
     } finally {
@@ -86,8 +91,6 @@ export default function Categories() {
     setSubName('')
     setEditingSubId(null)
     setExpandedSubId(null)
-    setFeeName('')
-    setEditingFeeId(null)
     setError('')
   }
 
@@ -130,48 +133,66 @@ export default function Categories() {
     })
   }
 
-  const feesFor = (subCategoryId: number) => feeTypes.filter((f) => f.subCategoryId === subCategoryId)
+  const feesFor = (subCategoryId: number) => subFeeMappings.filter((m) => m.subCategoryId === subCategoryId)
+
+  const isAssigned = (subCategoryId: number, catalogId: number) =>
+    subFeeMappings.some((m) => m.subCategoryId === subCategoryId && m.feeTypeCatalogId === catalogId)
 
   const toggleExpandSub = (subCategoryId: number) => {
     setExpandedSubId((prev) => (prev === subCategoryId ? null : subCategoryId))
-    setFeeName('')
-    setEditingFeeId(null)
     setError('')
   }
 
-  const submitFee = async (subCategoryId: number, e: FormEvent) => {
+  const toggleAssign = async (subCategoryId: number, catalogId: number) => {
+    setError('')
+    setAssigningSubId(subCategoryId)
+    const current = feesFor(subCategoryId).map((m) => m.feeTypeCatalogId)
+    const next = current.includes(catalogId)
+      ? current.filter((id) => id !== catalogId)
+      : [...current, catalogId]
+    try {
+      await client.put(`/subcategoryfeetypes?subCategoryId=${subCategoryId}`, { feeTypeCatalogIds: next })
+      await load()
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not update fee type assignment.'))
+    } finally {
+      setAssigningSubId(null)
+    }
+  }
+
+  const submitCatalog = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!feeName.trim()) return
-    setFeeSaving(true)
+    if (!catalogName.trim()) return
+    setCatalogSaving(true)
     try {
-      if (editingFeeId != null) {
-        await client.put(`/feetypes/${editingFeeId}`, { name: feeName.trim() })
+      if (editingCatalogId != null) {
+        await client.put(`/feetypes/${editingCatalogId}`, { name: catalogName.trim() })
       } else {
-        await client.post(`/feetypes?subCategoryId=${subCategoryId}`, { name: feeName.trim() })
+        await client.post('/feetypes', { name: catalogName.trim() })
       }
-      setFeeName('')
-      setEditingFeeId(null)
+      setCatalogName('')
+      setEditingCatalogId(null)
       await load()
     } catch (err) {
       setError(getErrorMessage(err, 'Could not save fee type.'))
     } finally {
-      setFeeSaving(false)
+      setCatalogSaving(false)
     }
   }
 
-  const startEditFee = (f: FeeType) => {
-    setEditingFeeId(f.id)
-    setFeeName(f.name)
+  const startEditCatalog = (f: FeeType) => {
+    setEditingCatalogId(f.id)
+    setCatalogName(f.name)
     setError('')
   }
 
-  const removeFee = (f: FeeType) => {
+  const removeCatalog = (f: FeeType) => {
     setConfirmState({
-      message: `Delete fee type “${f.name}”? Existing expenses keep their value.`,
+      message: `Delete fee type “${f.name}”? It will be removed from all sub-categories. Existing expenses keep their value.`,
       onConfirm: async () => {
         await client.delete(`/feetypes/${f.id}`)
-        if (editingFeeId === f.id) { setEditingFeeId(null); setFeeName('') }
+        if (editingCatalogId === f.id) { setEditingCatalogId(null); setCatalogName('') }
         await load()
       },
     })
@@ -264,55 +285,31 @@ export default function Categories() {
 
                                   {subExpanded && (
                                     <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                                      {fees.length === 0 ? (
-                                        <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '0 0 10px' }}>
-                                          No fee types yet. Add one below.
+                                      <p style={{ fontSize: 12, color: 'var(--text-dim)', margin: '0 0 8px' }}>
+                                        Assign reusable fee types to this sub-category:
+                                      </p>
+                                      {feeCatalog.length === 0 ? (
+                                        <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: 0 }}>
+                                          No fee types yet. Add some under “Reusable fee types” below.
                                         </p>
                                       ) : (
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                                          {fees.map((f) => (
-                                            <span
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                          {feeCatalog.map((f) => (
+                                            <label
                                               key={f.id}
-                                              className="tag"
-                                              style={{ background: 'var(--glass)', border: '1px solid var(--border)', gap: 8 }}
+                                              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, cursor: 'pointer' }}
                                             >
+                                              <input
+                                                type="checkbox"
+                                                checked={isAssigned(s.id, f.id)}
+                                                disabled={assigningSubId === s.id}
+                                                onChange={() => toggleAssign(s.id, f.id)}
+                                              />
                                               {f.name}
-                                              <button
-                                                type="button"
-                                                className="btn ghost icon sm"
-                                                title="Edit"
-                                                onClick={() => startEditFee(f)}
-                                              >✎</button>
-                                              <button
-                                                type="button"
-                                                className="btn danger icon sm"
-                                                title="Delete"
-                                                onClick={() => removeFee(f)}
-                                              >🗑</button>
-                                            </span>
+                                            </label>
                                           ))}
                                         </div>
                                       )}
-                                      <form onSubmit={(e) => submitFee(s.id, e)} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                                        <input
-                                          className="input"
-                                          style={{ flex: 1, minWidth: 160 }}
-                                          value={feeName}
-                                          onChange={(e) => setFeeName(e.target.value)}
-                                          placeholder={editingFeeId != null ? 'Edit fee type…' : 'e.g. Tuition Fee'}
-                                          maxLength={40}
-                                        />
-                                        <button className="btn sm" disabled={feeSaving}>
-                                          {feeSaving ? <span className="spinner" /> : (editingFeeId != null ? 'Update' : '＋ Add')}
-                                        </button>
-                                        {editingFeeId != null && (
-                                          <button
-                                            type="button"
-                                            className="btn ghost sm"
-                                            onClick={() => { setEditingFeeId(null); setFeeName('') }}
-                                          >Cancel</button>
-                                        )}
-                                      </form>
                                     </div>
                                   )}
                                 </div>
@@ -390,6 +387,60 @@ export default function Categories() {
             </div>
           </form>
         </div>
+      </div>
+
+      <div className="card" style={{ padding: 22, marginTop: 18 }}>
+        <h3 className="section-title">Reusable fee types</h3>
+        <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '0 0 14px' }}>
+          Define fee types once (e.g. Tuition Fee, Transport Fee, Books &amp; Uniform), then assign them to any sub-category above.
+        </p>
+
+        <form onSubmit={submitCatalog} style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+          <input
+            className="input"
+            style={{ flex: 1, minWidth: 200 }}
+            value={catalogName}
+            onChange={(e) => setCatalogName(e.target.value)}
+            placeholder={editingCatalogId != null ? 'Edit fee type…' : 'e.g. Tuition Fee'}
+            maxLength={40}
+          />
+          <button className="btn" disabled={catalogSaving}>
+            {catalogSaving ? <span className="spinner" /> : (editingCatalogId != null ? 'Update' : '＋ Add fee type')}
+          </button>
+          {editingCatalogId != null && (
+            <button type="button" className="btn ghost" onClick={() => { setEditingCatalogId(null); setCatalogName('') }}>
+              Cancel
+            </button>
+          )}
+        </form>
+
+        {feeCatalog.length === 0 ? (
+          <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: 0 }}>No fee types yet. Add one above.</p>
+        ) : (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {feeCatalog.map((f) => (
+              <span
+                key={f.id}
+                className="tag"
+                style={{ background: 'var(--glass)', border: '1px solid var(--border)', gap: 8, fontSize: 14 }}
+              >
+                {f.name}
+                <button
+                  type="button"
+                  className="btn ghost icon sm"
+                  title="Edit"
+                  onClick={() => startEditCatalog(f)}
+                >✎</button>
+                <button
+                  type="button"
+                  className="btn danger icon sm"
+                  title="Delete"
+                  onClick={() => removeCatalog(f)}
+                >🗑</button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

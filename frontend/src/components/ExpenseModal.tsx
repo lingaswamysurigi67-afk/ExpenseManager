@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toInputDate, paymentMethods, getErrorMessage } from '../utils'
-import type { Category, SubCategory, FeeType, Person, Expense, ExpensePayload } from '../types'
+import type { Category, SubCategory, SubCategoryFeeType, Person, Expense, ExpensePayload } from '../types'
 
 interface ExpenseModalProps {
   open: boolean
@@ -9,7 +9,7 @@ interface ExpenseModalProps {
   onSave: (payload: ExpensePayload) => Promise<void>
   categories: Category[]
   subCategories: SubCategory[]
-  feeTypes: FeeType[]
+  subCategoryFeeTypes: SubCategoryFeeType[]
   people: Person[]
   initial: Expense | null
 }
@@ -25,7 +25,7 @@ interface FormState {
   notes: string
 }
 
-export default function ExpenseModal({ open, onClose, onSave, categories, subCategories, feeTypes, people, initial }: ExpenseModalProps) {
+export default function ExpenseModal({ open, onClose, onSave, categories, subCategories, subCategoryFeeTypes, people, initial }: ExpenseModalProps) {
   const [form, setForm] = useState<FormState>({
     amount: '',
     personId: '',
@@ -75,7 +75,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, subCat
     : []
 
   const subFeeTypes = form.subCategoryId
-    ? feeTypes.filter((f) => f.subCategoryId === Number(form.subCategoryId))
+    ? subCategoryFeeTypes.filter((f) => f.subCategoryId === Number(form.subCategoryId))
     : []
 
   const submit = async (e: FormEvent) => {
@@ -199,7 +199,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, subCat
               >
                 <option value="">Select a fee type…</option>
                 {subFeeTypes.map((f) => (
-                  <option key={f.id} value={f.id}>{f.name}</option>
+                  <option key={f.id} value={f.feeTypeCatalogId}>{f.feeType}</option>
                 ))}
               </select>
             </div>

@@ -190,22 +190,27 @@ public class ExpensesController : ControllerBase
     }
 
     // Validates the chosen fee type against the sub-category. If the sub-category has any
-    // fee types configured, one must be selected; otherwise no fee type is allowed.
-    private async Task<(string? error, FeeType? feeType)> ResolveFeeType(int? subCategoryId, int? feeTypeId)
+    // fee types assigned, one must be selected; otherwise no fee type is allowed.
+    private async Task<(string? error, FeeTypeCatalog? feeType)> ResolveFeeType(int? subCategoryId, int? feeTypeId)
     {
         if (subCategoryId is null)
             return (null, null);
 
-        var hasFeeTypes = await _db.FeeTypes.AnyAsync(f => f.SubCategoryId == subCategoryId.Value);
+        var assignedIds = await _db.SubCategoryFeeTypes
+            .Where(m => m.SubCategoryId == subCategoryId.Value)
+            .Select(m => m.FeeTypeCatalogId)
+            .ToListAsync();
 
-        if (!hasFeeTypes)
+        if (assignedIds.Count == 0)
             return (null, null);
 
         if (feeTypeId is null)
             return ("Please choose a fee type for this sub-category.", null);
 
-        var feeType = await _db.FeeTypes
-            .FirstOrDefaultAsync(f => f.Id == feeTypeId.Value && f.SubCategoryId == subCategoryId.Value);
+        if (!assignedIds.Contains(feeTypeId.Value))
+            return ("Invalid fee type.", null);
+
+        var feeType = await _db.FeeTypeCatalog.FirstOrDefaultAsync(f => f.Id == feeTypeId.Value);
         if (feeType is null)
             return ("Invalid fee type.", null);
 

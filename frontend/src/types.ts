@@ -35,12 +35,18 @@ export interface SubCategory {
 
 export interface FeeType {
   id: number
-  subCategoryId: number
   name: string
   createdBy: string
   createdDate: string
   updatedBy: string | null
   updatedDate: string | null
+}
+
+export interface SubCategoryFeeType {
+  id: number
+  subCategoryId: number
+  feeTypeCatalogId: number
+  feeType: string
 }
 
 export interface Person {

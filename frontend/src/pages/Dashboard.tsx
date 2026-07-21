@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import { currency, formatDate } from '../utils'
-import type { Category, SubCategory, FeeType, Person, Expense, ExpensePayload, Summary, ExpensePage } from '../types'
+import type { Category, SubCategory, SubCategoryFeeType, Person, Expense, ExpensePayload, Summary, ExpensePage } from '../types'
 
 interface PieDatum {
   name: string
@@ -16,7 +16,7 @@ export default function Dashboard() {
   const [recent, setRecent] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
-  const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
+  const [subCategoryFeeTypes, setSubCategoryFeeTypes] = useState<SubCategoryFeeType[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -29,14 +29,14 @@ export default function Dashboard() {
         client.get<ExpensePage>('/expenses', { params: { page: 1, pageSize: 6, sort: 'date', dir: 'desc' } }),
         client.get<Category[]>('/categories'),
         client.get<SubCategory[]>('/subcategories'),
-        client.get<FeeType[]>('/feetypes'),
+        client.get<SubCategoryFeeType[]>('/subcategoryfeetypes'),
         client.get<Person[]>('/people'),
       ])
       setSummary(sum.data)
       setRecent(ex.data.items)
       setCategories(cat.data)
       setSubCategories(sub.data)
-      setFeeTypes(fee.data)
+      setSubCategoryFeeTypes(fee.data)
       setPeople(eo.data)
     } finally {
       setLoading(false)
@@ -146,7 +146,7 @@ export default function Dashboard() {
         onSave={save}
         categories={categories}
         subCategories={subCategories}
-        feeTypes={feeTypes}
+        subCategoryFeeTypes={subCategoryFeeTypes}
         people={people}
         initial={null}
       />

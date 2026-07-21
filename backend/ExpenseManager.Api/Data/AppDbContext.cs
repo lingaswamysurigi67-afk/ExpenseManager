@@ -10,7 +10,8 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<SubCategory> SubCategories => Set<SubCategory>();
-    public DbSet<FeeType> FeeTypes => Set<FeeType>();
+    public DbSet<FeeTypeCatalog> FeeTypeCatalog => Set<FeeTypeCatalog>();
+    public DbSet<SubCategoryFeeType> SubCategoryFeeTypes => Set<SubCategoryFeeType>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Income> Incomes => Set<Income>();
     public DbSet<Person> People => Set<Person>();
@@ -67,12 +68,11 @@ public class AppDbContext : DbContext
             e.HasIndex(s => s.CategoryId);
         });
 
-        modelBuilder.Entity<FeeType>(e =>
+        modelBuilder.Entity<FeeTypeCatalog>(e =>
         {
-            e.ToTable("FEE_TYPES", "Config");
+            e.ToTable("FEE_TYPE_CATALOG", "Config");
             e.HasKey(f => f.Id);
             e.Property(f => f.Id).HasColumnName("ID");
-            e.Property(f => f.SubCategoryId).HasColumnName("SUB_CATEGORY_ID");
             e.Property(f => f.Name).HasColumnName("NAME").HasMaxLength(40).IsRequired();
             e.Property(f => f.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
             e.Property(f => f.CreatedDate).HasColumnName("CREATED_DATE");
@@ -80,7 +80,23 @@ public class AppDbContext : DbContext
             e.Property(f => f.UpdatedDate).HasColumnName("UPDATED_DATE");
             e.Property(f => f.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
             e.HasQueryFilter(f => f.IsActive);
-            e.HasIndex(f => f.SubCategoryId);
+        });
+
+        modelBuilder.Entity<SubCategoryFeeType>(e =>
+        {
+            e.ToTable("SUB_CATEGORY_FEE_TYPES", "Config");
+            e.HasKey(m => m.Id);
+            e.Property(m => m.Id).HasColumnName("ID");
+            e.Property(m => m.SubCategoryId).HasColumnName("SUB_CATEGORY_ID");
+            e.Property(m => m.FeeTypeCatalogId).HasColumnName("FEE_TYPE_CATALOG_ID");
+            e.Property(m => m.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(m => m.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(m => m.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(m => m.UpdatedDate).HasColumnName("UPDATED_DATE");
+            e.Property(m => m.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
+            e.HasQueryFilter(m => m.IsActive);
+            e.HasIndex(m => m.SubCategoryId);
+            e.HasIndex(m => m.FeeTypeCatalogId);
         });
 
         modelBuilder.Entity<Expense>(e =>

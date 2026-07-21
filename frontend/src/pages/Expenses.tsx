@@ -8,13 +8,13 @@ import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
 import { useDebouncedValue } from '../hooks'
 import { currency, formatDate, monthNames } from '../utils'
-import type { Category, SubCategory, FeeType, Person, Expense, ExpensePayload, ExpensePage } from '../types'
+import type { Category, SubCategory, SubCategoryFeeType, Person, Expense, ExpensePayload, ExpensePage } from '../types'
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
-  const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
+  const [subCategoryFeeTypes, setSubCategoryFeeTypes] = useState<SubCategoryFeeType[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [totalAmount, setTotalAmount] = useState(0)
@@ -42,12 +42,12 @@ export default function Expenses() {
     const [cat, sub, fee, ppl] = await Promise.all([
       client.get<Category[]>('/categories'),
       client.get<SubCategory[]>('/subcategories'),
-      client.get<FeeType[]>('/feetypes'),
+      client.get<SubCategoryFeeType[]>('/subcategoryfeetypes'),
       client.get<Person[]>('/people'),
     ])
     setCategories(cat.data)
     setSubCategories(sub.data)
-    setFeeTypes(fee.data)
+    setSubCategoryFeeTypes(fee.data)
     setPeople(ppl.data)
   }
 
@@ -305,7 +305,7 @@ export default function Expenses() {
         onSave={save}
         categories={categories}
         subCategories={subCategories}
-        feeTypes={feeTypes}
+        subCategoryFeeTypes={subCategoryFeeTypes}
         people={people}
         initial={editing}
       />
