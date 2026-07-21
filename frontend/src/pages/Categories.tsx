@@ -3,13 +3,14 @@ import type { FormEvent } from 'react'
 import client from '../api/client'
 import { getErrorMessage } from '../utils'
 import ConfirmDialog from '../components/ConfirmDialog'
-import type { Category, SubCategory } from '../types'
+import type { Category, SubCategory, FeeType } from '../types'
 
 const swatches = ['#ef4444', '#f59e0b', '#22c55e', '#14b8a6', '#3b82f6', '#6d5efc', '#a855f7', '#ec4899', '#64748b']
 
 export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([])
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
+  const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [form, setForm] = useState({ name: '', color: swatches[5] })
@@ -20,17 +21,24 @@ export default function Categories() {
   const [subName, setSubName] = useState('')
   const [editingSubId, setEditingSubId] = useState<number | null>(null)
   const [subSaving, setSubSaving] = useState(false)
+
+  const [expandedSubId, setExpandedSubId] = useState<number | null>(null)
+  const [feeName, setFeeName] = useState('')
+  const [editingFeeId, setEditingFeeId] = useState<number | null>(null)
+  const [feeSaving, setFeeSaving] = useState(false)
   const [confirmState, setConfirmState] = useState<{ message: string; onConfirm: () => Promise<void> } | null>(null)
 
   const load = async () => {
     setLoading(true)
     try {
-      const [cat, sub] = await Promise.all([
+      const [cat, sub, fee] = await Promise.all([
         client.get<Category[]>('/categories'),
         client.get<SubCategory[]>('/subcategories'),
+        client.get<FeeType[]>('/feetypes'),
       ])
       setCategories(cat.data)
       setSubCategories(sub.data)
+      setFeeTypes(fee.data)
     } catch {
       setError('Failed to load categories.')
     } finally {
@@ -77,6 +85,9 @@ export default function Categories() {
     setExpandedId((prev) => (prev === categoryId ? null : categoryId))
     setSubName('')
     setEditingSubId(null)
+    setExpandedSubId(null)
+    setFeeName('')
+    setEditingFeeId(null)
     setError('')
   }
 
@@ -113,6 +124,54 @@ export default function Categories() {
       onConfirm: async () => {
         await client.delete(`/subcategories/${s.id}`)
         if (editingSubId === s.id) { setEditingSubId(null); setSubName('') }
+        if (expandedSubId === s.id) setExpandedSubId(null)
+        await load()
+      },
+    })
+  }
+
+  const feesFor = (subCategoryId: number) => feeTypes.filter((f) => f.subCategoryId === subCategoryId)
+
+  const toggleExpandSub = (subCategoryId: number) => {
+    setExpandedSubId((prev) => (prev === subCategoryId ? null : subCategoryId))
+    setFeeName('')
+    setEditingFeeId(null)
+    setError('')
+  }
+
+  const submitFee = async (subCategoryId: number, e: FormEvent) => {
+    e.preventDefault()
+    setError('')
+    if (!feeName.trim()) return
+    setFeeSaving(true)
+    try {
+      if (editingFeeId != null) {
+        await client.put(`/feetypes/${editingFeeId}`, { name: feeName.trim() })
+      } else {
+        await client.post(`/feetypes?subCategoryId=${subCategoryId}`, { name: feeName.trim() })
+      }
+      setFeeName('')
+      setEditingFeeId(null)
+      await load()
+    } catch (err) {
+      setError(getErrorMessage(err, 'Could not save fee type.'))
+    } finally {
+      setFeeSaving(false)
+    }
+  }
+
+  const startEditFee = (f: FeeType) => {
+    setEditingFeeId(f.id)
+    setFeeName(f.name)
+    setError('')
+  }
+
+  const removeFee = (f: FeeType) => {
+    setConfirmState({
+      message: `Delete fee type “${f.name}”? Existing expenses keep their value.`,
+      onConfirm: async () => {
+        await client.delete(`/feetypes/${f.id}`)
+        if (editingFeeId === f.id) { setEditingFeeId(null); setFeeName('') }
         await load()
       },
     })
@@ -165,28 +224,100 @@ export default function Categories() {
                             No sub-categories yet. Add one below.
                           </p>
                         ) : (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-                            {subs.map((s) => (
-                              <span
-                                key={s.id}
-                                className="tag"
-                                style={{ background: 'var(--glass)', border: '1px solid var(--border)', gap: 8 }}
-                              >
-                                {s.name}
-                                <button
-                                  type="button"
-                                  className="btn ghost icon sm"
-                                  title="Edit"
-                                  onClick={() => startEditSub(s)}
-                                >✎</button>
-                                <button
-                                  type="button"
-                                  className="btn danger icon sm"
-                                  title="Delete"
-                                  onClick={() => removeSub(s)}
-                                >🗑</button>
-                              </span>
-                            ))}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 10 }}>
+                            {subs.map((s) => {
+                              const fees = feesFor(s.id)
+                              const subExpanded = expandedSubId === s.id
+                              return (
+                                <div
+                                  key={s.id}
+                                  style={{
+                                    padding: '8px 10px', borderRadius: 10,
+                                    border: '1px solid var(--border)', background: 'var(--glass)',
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                                    <span style={{ fontWeight: 600 }}>{s.name}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                      {fees.length > 0 && (
+                                        <span style={{ fontSize: 12, color: 'var(--text-dim)' }}>{fees.length} fee</span>
+                                      )}
+                                      <button
+                                        type="button"
+                                        className="btn ghost icon sm"
+                                        title="Edit"
+                                        onClick={() => startEditSub(s)}
+                                      >✎</button>
+                                      <button
+                                        type="button"
+                                        className="btn danger icon sm"
+                                        title="Delete"
+                                        onClick={() => removeSub(s)}
+                                      >🗑</button>
+                                      <button
+                                        type="button"
+                                        className="btn ghost sm"
+                                        onClick={() => toggleExpandSub(s.id)}
+                                      >{subExpanded ? 'Hide' : 'Fee types'}</button>
+                                    </div>
+                                  </div>
+
+                                  {subExpanded && (
+                                    <div style={{ marginTop: 10, borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                                      {fees.length === 0 ? (
+                                        <p style={{ fontSize: 13, color: 'var(--text-dim)', margin: '0 0 10px' }}>
+                                          No fee types yet. Add one below.
+                                        </p>
+                                      ) : (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
+                                          {fees.map((f) => (
+                                            <span
+                                              key={f.id}
+                                              className="tag"
+                                              style={{ background: 'var(--glass)', border: '1px solid var(--border)', gap: 8 }}
+                                            >
+                                              {f.name}
+                                              <button
+                                                type="button"
+                                                className="btn ghost icon sm"
+                                                title="Edit"
+                                                onClick={() => startEditFee(f)}
+                                              >✎</button>
+                                              <button
+                                                type="button"
+                                                className="btn danger icon sm"
+                                                title="Delete"
+                                                onClick={() => removeFee(f)}
+                                              >🗑</button>
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                      <form onSubmit={(e) => submitFee(s.id, e)} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                        <input
+                                          className="input"
+                                          style={{ flex: 1, minWidth: 160 }}
+                                          value={feeName}
+                                          onChange={(e) => setFeeName(e.target.value)}
+                                          placeholder={editingFeeId != null ? 'Edit fee type…' : 'e.g. Tuition Fee'}
+                                          maxLength={40}
+                                        />
+                                        <button className="btn sm" disabled={feeSaving}>
+                                          {feeSaving ? <span className="spinner" /> : (editingFeeId != null ? 'Update' : '＋ Add')}
+                                        </button>
+                                        {editingFeeId != null && (
+                                          <button
+                                            type="button"
+                                            className="btn ghost sm"
+                                            onClick={() => { setEditingFeeId(null); setFeeName('') }}
+                                          >Cancel</button>
+                                        )}
+                                      </form>
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         )}
                         <form onSubmit={(e) => submitSub(c.id, e)} style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

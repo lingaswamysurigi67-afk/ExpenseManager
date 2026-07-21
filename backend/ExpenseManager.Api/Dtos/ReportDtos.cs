@@ -61,6 +61,15 @@ public class SubCategorySpendingRow
     public int Count { get; set; }
     public decimal? IncreaseAmount { get; set; }
     public double? IncreasePercentage { get; set; }
+    public List<FeeTypeBreakdown> Fees { get; set; } = new();
+}
+
+public class FeeTypeBreakdown
+{
+    public int? FeeTypeId { get; set; }
+    public string FeeType { get; set; } = string.Empty;
+    public decimal Total { get; set; }
+    public int Count { get; set; }
 }
 
 public class SubCategorySpendingResponse

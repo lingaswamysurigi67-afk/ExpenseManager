@@ -33,6 +33,16 @@ export interface SubCategory {
   updatedDate: string | null
 }
 
+export interface FeeType {
+  id: number
+  subCategoryId: number
+  name: string
+  createdBy: string
+  createdDate: string
+  updatedBy: string | null
+  updatedDate: string | null
+}
+
 export interface Person {
   id: number
   userId: string
@@ -51,6 +61,8 @@ export interface Expense {
   category: string
   subCategoryId: number | null
   subCategory: string | null
+  feeTypeId: number | null
+  feeType: string | null
   personId: number | null
   date: string
   paymentMethod: string
@@ -82,6 +94,7 @@ export interface ExpensePayload {
   amount: number
   categoryId: number
   subCategoryId: number | null
+  feeTypeId: number | null
   personId: number
   date: string
   paymentMethod: string
@@ -152,6 +165,14 @@ export interface SubCategorySpendingRow {
   count: number
   increaseAmount: number | null
   increasePercentage: number | null
+  fees: FeeTypeBreakdown[]
+}
+
+export interface FeeTypeBreakdown {
+  feeTypeId: number | null
+  feeType: string
+  total: number
+  count: number
 }
 
 export interface SubCategorySpending {

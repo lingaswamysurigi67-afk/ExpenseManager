@@ -203,6 +203,20 @@ public class ReportsController : ControllerBase
             .ThenBy(x => x.SubCategory)
             .ToList();
 
+        // Fee-type breakdown within each sub-category (only rows that have a fee type).
+        var feeGroups = await query
+            .Where(e => e.FeeTypeId != null)
+            .GroupBy(e => new { e.SubCategoryId, e.FeeTypeId, e.FeeType })
+            .Select(g => new
+            {
+                g.Key.SubCategoryId,
+                g.Key.FeeTypeId,
+                g.Key.FeeType,
+                Total = g.Sum(x => x.Amount),
+                Count = g.Count()
+            })
+            .ToListAsync();
+
         var rows = new List<SubCategorySpendingRow>();
         decimal? prev = null;
         foreach (var g in ordered)
@@ -211,6 +225,18 @@ public class ReportsController : ControllerBase
             double? incPct = (prev is null || prev.Value == 0)
                 ? null
                 : Math.Round((double)((g.Total - prev.Value) / prev.Value) * 100, 1);
+
+            var fees = feeGroups
+                .Where(f => f.SubCategoryId == g.SubCategoryId)
+                .OrderByDescending(f => f.Total)
+                .Select(f => new FeeTypeBreakdown
+                {
+                    FeeTypeId = f.FeeTypeId,
+                    FeeType = f.FeeType ?? string.Empty,
+                    Total = f.Total,
+                    Count = f.Count
+                })
+                .ToList();
 
             rows.Add(new SubCategorySpendingRow
             {
@@ -221,7 +247,8 @@ public class ReportsController : ControllerBase
                 Total = g.Total,
                 Count = g.Count,
                 IncreaseAmount = incAmount,
-                IncreasePercentage = incPct
+                IncreasePercentage = incPct,
+                Fees = fees
             });
 
             prev = g.Total;

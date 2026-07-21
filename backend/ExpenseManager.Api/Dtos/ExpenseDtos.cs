@@ -13,6 +13,8 @@ public class ExpenseRequest
 
     public int? SubCategoryId { get; set; }
 
+    public int? FeeTypeId { get; set; }
+
     [Range(1, int.MaxValue)]
     public int PersonId { get; set; }
 
@@ -35,6 +37,8 @@ public class ExpenseResponse
     public string Category { get; set; } = string.Empty;
     public int? SubCategoryId { get; set; }
     public string? SubCategory { get; set; }
+    public int? FeeTypeId { get; set; }
+    public string? FeeType { get; set; }
     public int? PersonId { get; set; }
     public DateTime Date { get; set; }
     public string PaymentMethod { get; set; } = string.Empty;
@@ -53,6 +57,8 @@ public class ExpenseResponse
         Category = e.Category,
         SubCategoryId = e.SubCategoryId,
         SubCategory = e.SubCategory,
+        FeeTypeId = e.FeeTypeId,
+        FeeType = e.FeeType,
         PersonId = e.PersonId,
         Date = e.Date,
         PaymentMethod = e.PaymentMethod,
@@ -98,5 +104,33 @@ public class SubCategoryResponse
         CreatedDate = s.CreatedDate,
         UpdatedBy = s.UpdatedBy,
         UpdatedDate = s.UpdatedDate
+    };
+}
+
+public class FeeTypeRequest
+{
+    [Required, MinLength(1), MaxLength(40)]
+    public string Name { get; set; } = string.Empty;
+}
+
+public class FeeTypeResponse
+{
+    public int Id { get; set; }
+    public int SubCategoryId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; }
+    public string? UpdatedBy { get; set; }
+    public DateTime? UpdatedDate { get; set; }
+
+    public static FeeTypeResponse From(FeeType f) => new()
+    {
+        Id = f.Id,
+        SubCategoryId = f.SubCategoryId,
+        Name = f.Name,
+        CreatedBy = f.CreatedBy,
+        CreatedDate = f.CreatedDate,
+        UpdatedBy = f.UpdatedBy,
+        UpdatedDate = f.UpdatedDate
     };
 }

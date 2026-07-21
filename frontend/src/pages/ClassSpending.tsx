@@ -132,7 +132,18 @@ export default function ClassSpending() {
                     const color = up ? '#ef4444' : down ? '#22c55e' : 'var(--text-dim)'
                     return (
                       <tr key={r.subCategoryId ?? r.subCategory}>
-                        <td style={{ fontWeight: 600 }}>{r.subCategory}</td>
+                        <td style={{ fontWeight: 600 }}>
+                          {r.subCategory}
+                          {r.fees.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4, fontWeight: 400 }}>
+                              {r.fees.map((f) => (
+                                <span key={f.feeTypeId ?? f.feeType} style={{ fontSize: 12, color: 'var(--text-dim)' }}>
+                                  {f.feeType}: {currency(f.total)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                         <td style={{ color: 'var(--text-dim)' }}>{yearsLabel(r.firstYear, r.lastYear)}</td>
                         <td className="amount" style={{ textAlign: 'right' }}>{currency(r.total)}</td>
                         <td style={{ textAlign: 'right', color }}>

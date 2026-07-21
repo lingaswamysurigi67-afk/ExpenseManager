@@ -9,6 +9,8 @@ public class Expense
     public string Category { get; set; } = string.Empty;
     public int? SubCategoryId { get; set; }
     public string? SubCategory { get; set; }
+    public int? FeeTypeId { get; set; }
+    public string? FeeType { get; set; }
     public int? PersonId { get; set; }
     public DateTime Date { get; set; } = DateTime.UtcNow;
     public string PaymentMethod { get; set; } = "Cash";

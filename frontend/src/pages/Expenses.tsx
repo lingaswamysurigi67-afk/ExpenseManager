@@ -8,12 +8,13 @@ import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
 import { useDebouncedValue } from '../hooks'
 import { currency, formatDate, monthNames } from '../utils'
-import type { Category, SubCategory, Person, Expense, ExpensePayload, ExpensePage } from '../types'
+import type { Category, SubCategory, FeeType, Person, Expense, ExpensePayload, ExpensePage } from '../types'
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
+  const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [totalAmount, setTotalAmount] = useState(0)
@@ -38,13 +39,15 @@ export default function Expenses() {
 
   // Categories and people rarely change; fetch them once for display and the modal.
   const loadLookups = async () => {
-    const [cat, sub, ppl] = await Promise.all([
+    const [cat, sub, fee, ppl] = await Promise.all([
       client.get<Category[]>('/categories'),
       client.get<SubCategory[]>('/subcategories'),
+      client.get<FeeType[]>('/feetypes'),
       client.get<Person[]>('/people'),
     ])
     setCategories(cat.data)
     setSubCategories(sub.data)
+    setFeeTypes(fee.data)
     setPeople(ppl.data)
   }
 
@@ -253,6 +256,7 @@ export default function Expenses() {
                   <SortHeader label="Expenditure On" sortKey="person" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <SortHeader label="Category" sortKey="category" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} />
                   <th>Sub-category</th>
+                  <th>Fee type</th>
                   <th>Notes</th>
                   <th>Method</th>
                   <SortHeader label="Amount" sortKey="amount" activeKey={sort.key} dir={sort.dir} onSort={toggleSort} style={{ textAlign: 'right' }} />
@@ -274,6 +278,7 @@ export default function Expenses() {
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-dim)' }}>{e.subCategory || '—'}</td>
+                    <td style={{ color: 'var(--text-dim)' }}>{e.feeType || '—'}</td>
                     <td style={{ color: 'var(--text-dim)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {e.notes || '—'}
                     </td>
@@ -300,6 +305,7 @@ export default function Expenses() {
         onSave={save}
         categories={categories}
         subCategories={subCategories}
+        feeTypes={feeTypes}
         people={people}
         initial={editing}
       />

@@ -102,6 +102,10 @@ public class ExpensesController : ControllerBase
         if (subError is not null)
             return BadRequest(new { message = subError });
 
+        var (feeError, feeType) = await ResolveFeeType(subCategory?.Id, request.FeeTypeId);
+        if (feeError is not null)
+            return BadRequest(new { message = feeError });
+
         var expense = new Expense
         {
             UserId = UserId,
@@ -110,6 +114,8 @@ public class ExpensesController : ControllerBase
             Category = category.Name,
             SubCategoryId = subCategory?.Id,
             SubCategory = subCategory?.Name,
+            FeeTypeId = feeType?.Id,
+            FeeType = feeType?.Name,
             PersonId = person.Id,
             Date = request.Date,
             PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
@@ -141,11 +147,17 @@ public class ExpensesController : ControllerBase
         if (subError is not null)
             return BadRequest(new { message = subError });
 
+        var (feeError, feeType) = await ResolveFeeType(subCategory?.Id, request.FeeTypeId);
+        if (feeError is not null)
+            return BadRequest(new { message = feeError });
+
         expense.Amount = request.Amount;
         expense.CategoryId = category.Id;
         expense.Category = category.Name;
         expense.SubCategoryId = subCategory?.Id;
         expense.SubCategory = subCategory?.Name;
+        expense.FeeTypeId = feeType?.Id;
+        expense.FeeType = feeType?.Name;
         expense.PersonId = person.Id;
         expense.Date = request.Date;
         expense.PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod;
@@ -175,6 +187,29 @@ public class ExpensesController : ControllerBase
             return ("Invalid sub-category.", null);
 
         return (null, subCategory);
+    }
+
+    // Validates the chosen fee type against the sub-category. If the sub-category has any
+    // fee types configured, one must be selected; otherwise no fee type is allowed.
+    private async Task<(string? error, FeeType? feeType)> ResolveFeeType(int? subCategoryId, int? feeTypeId)
+    {
+        if (subCategoryId is null)
+            return (null, null);
+
+        var hasFeeTypes = await _db.FeeTypes.AnyAsync(f => f.SubCategoryId == subCategoryId.Value);
+
+        if (!hasFeeTypes)
+            return (null, null);
+
+        if (feeTypeId is null)
+            return ("Please choose a fee type for this sub-category.", null);
+
+        var feeType = await _db.FeeTypes
+            .FirstOrDefaultAsync(f => f.Id == feeTypeId.Value && f.SubCategoryId == subCategoryId.Value);
+        if (feeType is null)
+            return ("Invalid fee type.", null);
+
+        return (null, feeType);
     }
 
     [HttpDelete("{id:int}")]

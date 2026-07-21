@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import { currency, formatDate } from '../utils'
-import type { Category, SubCategory, Person, Expense, ExpensePayload, Summary, ExpensePage } from '../types'
+import type { Category, SubCategory, FeeType, Person, Expense, ExpensePayload, Summary, ExpensePage } from '../types'
 
 interface PieDatum {
   name: string
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [recent, setRecent] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [subCategories, setSubCategories] = useState<SubCategory[]>([])
+  const [feeTypes, setFeeTypes] = useState<FeeType[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -23,17 +24,19 @@ export default function Dashboard() {
   const load = async () => {
     setLoading(true)
     try {
-      const [sum, ex, cat, sub, eo] = await Promise.all([
+      const [sum, ex, cat, sub, fee, eo] = await Promise.all([
         client.get<Summary>('/reports/summary'),
         client.get<ExpensePage>('/expenses', { params: { page: 1, pageSize: 6, sort: 'date', dir: 'desc' } }),
         client.get<Category[]>('/categories'),
         client.get<SubCategory[]>('/subcategories'),
+        client.get<FeeType[]>('/feetypes'),
         client.get<Person[]>('/people'),
       ])
       setSummary(sum.data)
       setRecent(ex.data.items)
       setCategories(cat.data)
       setSubCategories(sub.data)
+      setFeeTypes(fee.data)
       setPeople(eo.data)
     } finally {
       setLoading(false)
@@ -143,6 +146,7 @@ export default function Dashboard() {
         onSave={save}
         categories={categories}
         subCategories={subCategories}
+        feeTypes={feeTypes}
         people={people}
         initial={null}
       />
