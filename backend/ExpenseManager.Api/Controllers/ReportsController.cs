@@ -168,4 +168,72 @@ public class ReportsController : ControllerBase
 
         return Ok(response);
     }
+
+    // Spending grouped by sub-category (e.g. class) for a single person, ordered
+    // chronologically, with the year-over-year increase amount and percentage.
+    [HttpGet("subcategory-spending")]
+    public async Task<IActionResult> SubCategorySpending(
+        [FromQuery] int personId, [FromQuery] int? categoryId)
+    {
+        var person = await _db.People.FirstOrDefaultAsync(p => p.Id == personId && p.UserId == UserId);
+        if (person is null)
+            return BadRequest(new { message = "Invalid person." });
+
+        var query = _db.Expenses
+            .Where(e => e.UserId == UserId && e.PersonId == personId && e.SubCategoryId != null);
+        if (categoryId.HasValue)
+            query = query.Where(e => e.CategoryId == categoryId.Value);
+
+        var grouped = await query
+            .GroupBy(e => new { e.SubCategoryId, e.SubCategory })
+            .Select(g => new
+            {
+                g.Key.SubCategoryId,
+                g.Key.SubCategory,
+                Total = g.Sum(x => x.Amount),
+                Count = g.Count(),
+                FirstYear = g.Min(x => x.Date.Year),
+                LastYear = g.Max(x => x.Date.Year),
+                FirstDate = g.Min(x => x.Date)
+            })
+            .ToListAsync();
+
+        var ordered = grouped
+            .OrderBy(x => x.FirstDate)
+            .ThenBy(x => x.SubCategory)
+            .ToList();
+
+        var rows = new List<SubCategorySpendingRow>();
+        decimal? prev = null;
+        foreach (var g in ordered)
+        {
+            decimal? incAmount = prev is null ? null : g.Total - prev.Value;
+            double? incPct = (prev is null || prev.Value == 0)
+                ? null
+                : Math.Round((double)((g.Total - prev.Value) / prev.Value) * 100, 1);
+
+            rows.Add(new SubCategorySpendingRow
+            {
+                SubCategoryId = g.SubCategoryId,
+                SubCategory = g.SubCategory ?? string.Empty,
+                FirstYear = g.FirstYear,
+                LastYear = g.LastYear,
+                Total = g.Total,
+                Count = g.Count,
+                IncreaseAmount = incAmount,
+                IncreasePercentage = incPct
+            });
+
+            prev = g.Total;
+        }
+
+        return Ok(new SubCategorySpendingResponse
+        {
+            PersonId = person.Id,
+            Person = person.Name,
+            GrandTotal = rows.Sum(r => r.Total),
+            Rows = rows
+        });
+    }
 }
+

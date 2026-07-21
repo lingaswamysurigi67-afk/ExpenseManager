@@ -143,6 +143,24 @@ export interface Receivables {
   rows: ReceivableRow[]
 }
 
+export interface SubCategorySpendingRow {
+  subCategoryId: number | null
+  subCategory: string
+  firstYear: number
+  lastYear: number
+  total: number
+  count: number
+  increaseAmount: number | null
+  increasePercentage: number | null
+}
+
+export interface SubCategorySpending {
+  personId: number
+  person: string
+  grandTotal: number
+  rows: SubCategorySpendingRow[]
+}
+
 export interface AdminUserRow {
   id: string
   userName: string

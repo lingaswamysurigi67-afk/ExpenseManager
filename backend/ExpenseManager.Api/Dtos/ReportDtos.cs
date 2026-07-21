@@ -50,3 +50,23 @@ public class ReceivablesResponse
     public int PageSize { get; set; }
     public List<ReceivableRow> Rows { get; set; } = new();
 }
+
+public class SubCategorySpendingRow
+{
+    public int? SubCategoryId { get; set; }
+    public string SubCategory { get; set; } = string.Empty;
+    public int FirstYear { get; set; }
+    public int LastYear { get; set; }
+    public decimal Total { get; set; }
+    public int Count { get; set; }
+    public decimal? IncreaseAmount { get; set; }
+    public double? IncreasePercentage { get; set; }
+}
+
+public class SubCategorySpendingResponse
+{
+    public int PersonId { get; set; }
+    public string Person { get; set; } = string.Empty;
+    public decimal GrandTotal { get; set; }
+    public List<SubCategorySpendingRow> Rows { get; set; } = new();
+}

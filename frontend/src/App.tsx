@@ -12,6 +12,7 @@ import Income from './pages/Income'
 import People from './pages/People'
 import Categories from './pages/Categories'
 import Reports from './pages/Reports'
+import ClassSpending from './pages/ClassSpending'
 import Receivables from './pages/Receivables'
 import Users from './pages/Users'
 
@@ -52,6 +53,7 @@ export default function App() {
         <Route path="receivables" element={<Receivables />} />
         <Route path="categories" element={<Categories />} />
         <Route path="reports" element={<Reports />} />
+        <Route path="class-spending" element={<ClassSpending />} />
         <Route path="users" element={<AdminOnly><Users /></AdminOnly>} />
       </Route>
 

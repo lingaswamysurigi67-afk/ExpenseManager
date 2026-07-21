@@ -18,6 +18,7 @@ const links: NavItem[] = [
   { to: '/receivables', label: 'Receivables', icon: '🧧' },
   { to: '/categories', label: 'Categories', icon: '🏷️' },
   { to: '/reports', label: 'Reports', icon: '📈' },
+  { to: '/class-spending', label: 'Class spending', icon: '🎓' },
 ]
 
 export default function Layout() {
