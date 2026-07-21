@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import ImportModal from '../components/ImportModal'
@@ -6,13 +6,16 @@ import ConfirmDialog from '../components/ConfirmDialog'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
+import { useDebouncedValue } from '../hooks'
 import { currency, formatDate, monthNames } from '../utils'
-import type { Category, Person, Expense, ExpensePayload } from '../types'
+import type { Category, Person, Expense, ExpensePayload, ExpensePage } from '../types'
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [people, setPeople] = useState<Person[]>([])
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalAmount, setTotalAmount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
@@ -22,6 +25,7 @@ export default function Expenses() {
   const now = new Date()
   const [filters, setFilters] = useState({ year: '', month: '', categoryId: '', from: '', to: '' })
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search)
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'date', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -31,24 +35,40 @@ export default function Expenses() {
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
 
-  const load = async () => {
+  // Categories and people rarely change; fetch them once for display and the modal.
+  const loadLookups = async () => {
+    const [cat, ppl] = await Promise.all([
+      client.get<Category[]>('/categories'),
+      client.get<Person[]>('/people'),
+    ])
+    setCategories(cat.data)
+    setPeople(ppl.data)
+  }
+
+  const load = async (pageArg: number) => {
     setLoading(true)
     setError('')
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string> = { page: String(pageArg), pageSize: String(pageSize) }
       if (filters.year) params.year = filters.year
       if (filters.month) params.month = filters.month
       if (filters.categoryId) params.categoryId = filters.categoryId
       if (filters.from) params.from = filters.from
       if (filters.to) params.to = filters.to
-      const [ex, cat, eo] = await Promise.all([
-        client.get<Expense[]>('/expenses', { params }),
-        client.get<Category[]>('/categories'),
-        client.get<Person[]>('/people'),
-      ])
-      setExpenses(ex.data)
-      setCategories(cat.data)
-      setPeople(eo.data)
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
+      params.sort = sort.key
+      params.dir = sort.dir
+
+      const { data } = await client.get<ExpensePage>('/expenses', { params })
+
+      const lastPage = Math.max(1, Math.ceil(data.totalCount / pageSize))
+      if (pageArg > lastPage) {
+        setPage(lastPage)
+        return
+      }
+      setExpenses(data.items)
+      setTotalCount(data.totalCount)
+      setTotalAmount(data.totalAmount)
       setSelected(new Set())
     } catch {
       setError('Failed to load expenses.')
@@ -58,53 +78,36 @@ export default function Expenses() {
   }
 
   useEffect(() => {
-    load()
+    loadLookups()
+  }, [])
+
+  // Reset to page 1 whenever the query changes, then fetch the requested page.
+  const filterKey = JSON.stringify({ filters, search: debouncedSearch, sort, pageSize })
+  const prevKey = useRef(filterKey)
+  useEffect(() => {
+    if (prevKey.current !== filterKey) {
+      prevKey.current = filterKey
+      if (page !== 1) {
+        setPage(1)
+        return
+      }
+    }
+    load(page)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
+  }, [filterKey, page])
+
+  const refresh = () => load(page)
 
   const catColor = (id: number) => categories.find((c) => c.id === id)?.color || '#64748b'
   const personName = (id: number | null) => people.find((p) => p.id === id)?.name || ''
 
-  const sortVal = (e: Expense, key: string): string | number => {
-    switch (key) {
-      case 'date': return new Date(e.date).getTime()
-      case 'amount': return Number(e.amount)
-      case 'person': return personName(e.personId).toLowerCase()
-      case 'category': return (e.category || '').toLowerCase()
-      default: return 0
-    }
-  }
-
-  const visible = useMemo(() => {
-    const q = search.trim().toLowerCase()
-    let rows = expenses
-    if (q) {
-      rows = rows.filter((e) =>
-        personName(e.personId).toLowerCase().includes(q) ||
-        (e.category || '').toLowerCase().includes(q) ||
-        (e.notes || '').toLowerCase().includes(q) ||
-        (e.paymentMethod || '').toLowerCase().includes(q)
-      )
-    }
-    const sorted = [...rows].sort((a, b) => {
-      const va = sortVal(a, sort.key)
-      const vb = sortVal(b, sort.key)
-      const cmp = va < vb ? -1 : va > vb ? 1 : 0
-      return sort.dir === 'asc' ? cmp : -cmp
-    })
-    return sorted
-  }, [expenses, search, sort])
-
-  const total = useMemo(
-    () => visible.reduce((sum, e) => sum + Number(e.amount), 0),
-    [visible]
+  const pageTotal = useMemo(
+    () => expenses.reduce((sum, e) => sum + Number(e.amount), 0),
+    [expenses]
   )
 
-  useEffect(() => { setPage(1) }, [search, sort, filters, pageSize])
-  const paged = visible.slice((page - 1) * pageSize, page * pageSize)
-
-  const allPageSelected = paged.length > 0 && paged.every((e) => selected.has(e.id))
-  const somePageSelected = paged.some((e) => selected.has(e.id))
+  const allPageSelected = expenses.length > 0 && expenses.every((e) => selected.has(e.id))
+  const somePageSelected = expenses.some((e) => selected.has(e.id))
 
   const toggleRow = (id: number) => {
     setSelected((prev) => {
@@ -117,8 +120,8 @@ export default function Expenses() {
   const toggleAllOnPage = () => {
     setSelected((prev) => {
       const next = new Set(prev)
-      if (allPageSelected) paged.forEach((e) => next.delete(e.id))
-      else paged.forEach((e) => next.add(e.id))
+      if (allPageSelected) expenses.forEach((e) => next.delete(e.id))
+      else expenses.forEach((e) => next.add(e.id))
       return next
     })
   }
@@ -127,7 +130,7 @@ export default function Expenses() {
     if (selected.size === 0) return
     setConfirmState({
       message: `Delete ${selected.size} selected expense${selected.size !== 1 ? 's' : ''}? This cannot be undone.`,
-      onConfirm: async () => { await client.post('/expenses/bulk-delete', { ids: [...selected] }); await load() },
+      onConfirm: async () => { await client.post('/expenses/bulk-delete', { ids: [...selected] }); refresh() },
     })
   }
 
@@ -137,13 +140,13 @@ export default function Expenses() {
     } else {
       await client.post('/expenses', payload)
     }
-    await load()
+    refresh()
   }
 
   const remove = (id: number) => {
     setConfirmState({
       message: 'Delete this expense? This cannot be undone.',
-      onConfirm: async () => { await client.delete(`/expenses/${id}`); await load() },
+      onConfirm: async () => { await client.delete(`/expenses/${id}`); refresh() },
     })
   }
 
@@ -155,7 +158,7 @@ export default function Expenses() {
       <div className="topbar" style={{ marginBottom: 18 }}>
         <div>
           <h2 style={{ fontSize: 20 }}>Expenses</h2>
-          <p>{visible.length} record{visible.length !== 1 ? 's' : ''} · Total {currency(total)}</p>
+          <p>{totalCount} record{totalCount !== 1 ? 's' : ''} · Total {currency(totalAmount)} · This page {currency(pageTotal)}</p>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button className="btn ghost" onClick={() => setImportOpen(true)}>
@@ -228,7 +231,7 @@ export default function Expenses() {
 
         {loading ? (
           <div className="empty"><span className="spinner" /></div>
-        ) : visible.length === 0 ? (
+        ) : expenses.length === 0 ? (
           <div className="empty">No expenses match. Try clearing filters or search.</div>
         ) : (
           <div className="table-scroll">
@@ -253,7 +256,7 @@ export default function Expenses() {
                 </tr>
               </thead>
               <tbody>
-                {paged.map((e) => (
+                {expenses.map((e) => (
                   <tr key={e.id}>
                     <td className="chk-col">
                       <input type="checkbox" checked={selected.has(e.id)} onChange={() => toggleRow(e.id)} />
@@ -283,7 +286,7 @@ export default function Expenses() {
             </table>
           </div>
         )}
-        <Pagination page={page} pageSize={pageSize} total={visible.length} onPage={setPage} onPageSize={setPageSize} />
+        <Pagination page={page} pageSize={pageSize} total={totalCount} onPage={setPage} onPageSize={setPageSize} />
       </div>
 
       <ExpenseModal
@@ -299,7 +302,7 @@ export default function Expenses() {
         open={importOpen}
         kind="expense"
         onClose={() => setImportOpen(false)}
-        onImported={load}
+        onImported={refresh}
         categories={categories}
         people={people}
       />

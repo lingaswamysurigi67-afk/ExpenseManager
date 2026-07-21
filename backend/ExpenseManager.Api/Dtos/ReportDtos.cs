@@ -44,5 +44,9 @@ public class ReceivablesResponse
     public decimal TotalGiven { get; set; }
     public decimal TotalReturned { get; set; }
     public decimal TotalRemaining { get; set; }
+    public int FilteredCount { get; set; }
+    public decimal FilteredRemaining { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
     public List<ReceivableRow> Rows { get; set; } = new();
 }

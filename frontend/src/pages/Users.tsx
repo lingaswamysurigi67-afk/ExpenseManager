@@ -1,16 +1,18 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import client from '../api/client'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
+import { useDebouncedValue } from '../hooks'
 import { formatDate } from '../utils'
-import type { AdminUsersResponse, AdminUserRow } from '../types'
+import type { AdminUsersResponse } from '../types'
 
 export default function Users() {
   const [data, setData] = useState<AdminUsersResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search)
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'createdDate', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -18,11 +20,25 @@ export default function Users() {
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
 
-  const load = async () => {
+  const load = async (pageArg: number) => {
     setLoading(true)
     setError('')
     try {
-      const { data } = await client.get<AdminUsersResponse>('/admin/users')
+      const params: Record<string, string> = {
+        page: String(pageArg),
+        pageSize: String(pageSize),
+        sort: sort.key,
+        dir: sort.dir,
+      }
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
+
+      const { data } = await client.get<AdminUsersResponse>('/admin/users', { params })
+
+      const lastPage = Math.max(1, Math.ceil(data.filteredCount / pageSize))
+      if (pageArg > lastPage) {
+        setPage(lastPage)
+        return
+      }
       setData(data)
     } catch {
       setError('Failed to load users.')
@@ -31,36 +47,21 @@ export default function Users() {
     }
   }
 
+  const filterKey = JSON.stringify({ search: debouncedSearch, sort, pageSize })
+  const prevKey = useRef(filterKey)
   useEffect(() => {
-    load()
-  }, [])
-
-  const sortVal = (u: AdminUserRow, key: string): string | number => {
-    switch (key) {
-      case 'userName': return (u.userName || '').toLowerCase()
-      case 'email': return (u.email || '').toLowerCase()
-      case 'createdDate': return new Date(u.createdDate).getTime()
-      default: return 0
+    if (prevKey.current !== filterKey) {
+      prevKey.current = filterKey
+      if (page !== 1) {
+        setPage(1)
+        return
+      }
     }
-  }
+    load(page)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, page])
 
-  const visible = useMemo(() => {
-    const rows = data?.users ?? []
-    const q = search.trim().toLowerCase()
-    const filtered = q
-      ? rows.filter((u) => u.userName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
-      : rows
-    const sorted = [...filtered].sort((a, b) => {
-      const va = sortVal(a, sort.key)
-      const vb = sortVal(b, sort.key)
-      const cmp = va < vb ? -1 : va > vb ? 1 : 0
-      return sort.dir === 'asc' ? cmp : -cmp
-    })
-    return sorted
-  }, [data, search, sort])
-
-  useEffect(() => { setPage(1) }, [search, sort, pageSize])
-  const paged = visible.slice((page - 1) * pageSize, page * pageSize)
+  const users = data?.users ?? []
 
   return (
     <div className="fade-up">
@@ -100,7 +101,7 @@ export default function Users() {
 
         {loading ? (
           <div className="empty"><span className="spinner" /></div>
-        ) : visible.length === 0 ? (
+        ) : users.length === 0 ? (
           <div className="empty">No users found.</div>
         ) : (
           <div className="table-scroll">
@@ -113,7 +114,7 @@ export default function Users() {
                 </tr>
               </thead>
               <tbody>
-                {paged.map((u) => (
+                {users.map((u) => (
                   <tr key={u.id}>
                     <td style={{ fontWeight: 600 }}>{u.userName}</td>
                     <td style={{ color: 'var(--text-dim)' }}>{u.email}</td>
@@ -124,7 +125,7 @@ export default function Users() {
             </table>
           </div>
         )}
-        <Pagination page={page} pageSize={pageSize} total={visible.length} onPage={setPage} onPageSize={setPageSize} />
+        <Pagination page={page} pageSize={pageSize} total={data?.filteredCount ?? 0} onPage={setPage} onPageSize={setPageSize} />
       </div>
     </div>
   )

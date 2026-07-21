@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
 import { currency, formatDate } from '../utils'
-import type { Category, Person, Expense, ExpensePayload, Summary } from '../types'
+import type { Category, Person, Expense, ExpensePayload, Summary, ExpensePage } from '../types'
 
 interface PieDatum {
   name: string
@@ -24,12 +24,12 @@ export default function Dashboard() {
     try {
       const [sum, ex, cat, eo] = await Promise.all([
         client.get<Summary>('/reports/summary'),
-        client.get<Expense[]>('/expenses'),
+        client.get<ExpensePage>('/expenses', { params: { page: 1, pageSize: 6, sort: 'date', dir: 'desc' } }),
         client.get<Category[]>('/categories'),
         client.get<Person[]>('/people'),
       ])
       setSummary(sum.data)
-      setRecent(ex.data.slice(0, 6))
+      setRecent(ex.data.items)
       setCategories(cat.data)
       setPeople(eo.data)
     } finally {

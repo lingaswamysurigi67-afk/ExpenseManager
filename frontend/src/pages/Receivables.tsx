@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import client from '../api/client'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
+import { useDebouncedValue } from '../hooks'
 import { currency, monthNames } from '../utils'
-import type { Receivables as ReceivablesData, ReceivableRow } from '../types'
+import type { Receivables as ReceivablesData } from '../types'
 
 export default function Receivables() {
   const now = new Date()
@@ -13,6 +14,7 @@ export default function Receivables() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const debouncedSearch = useDebouncedValue(search)
   const [sort, setSort] = useState<{ key: string; dir: SortDir }>({ key: 'remaining', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -20,14 +22,27 @@ export default function Receivables() {
   const toggleSort = (key: string) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' }))
 
-  const load = async () => {
+  const load = async (pageArg: number) => {
     setLoading(true)
     setError('')
     try {
-      const params: Record<string, string> = {}
+      const params: Record<string, string> = {
+        page: String(pageArg),
+        pageSize: String(pageSize),
+        sort: sort.key,
+        dir: sort.dir,
+      }
       if (filters.year) params.year = filters.year
       if (filters.month) params.month = filters.month
+      if (debouncedSearch.trim()) params.search = debouncedSearch.trim()
+
       const { data } = await client.get<ReceivablesData>('/reports/receivables', { params })
+
+      const lastPage = Math.max(1, Math.ceil(data.filteredCount / pageSize))
+      if (pageArg > lastPage) {
+        setPage(lastPage)
+        return
+      }
       setData(data)
     } catch {
       setError('Failed to load receivables.')
@@ -36,41 +51,23 @@ export default function Receivables() {
     }
   }
 
+  const filterKey = JSON.stringify({ filters, search: debouncedSearch, sort, pageSize })
+  const prevKey = useRef(filterKey)
   useEffect(() => {
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters])
-
-  const sortVal = (r: ReceivableRow, key: string): string | number => {
-    switch (key) {
-      case 'person': return (r.person || '').toLowerCase()
-      case 'given': return Number(r.given)
-      case 'returned': return Number(r.returned)
-      case 'remaining': return Number(r.remaining)
-      default: return 0
+    if (prevKey.current !== filterKey) {
+      prevKey.current = filterKey
+      if (page !== 1) {
+        setPage(1)
+        return
+      }
     }
-  }
+    load(page)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterKey, page])
 
-  const visible = useMemo(() => {
-    const rows = data?.rows ?? []
-    const q = search.trim().toLowerCase()
-    const filtered = q ? rows.filter((r) => r.person.toLowerCase().includes(q)) : rows
-    const sorted = [...filtered].sort((a, b) => {
-      const va = sortVal(a, sort.key)
-      const vb = sortVal(b, sort.key)
-      const cmp = va < vb ? -1 : va > vb ? 1 : 0
-      return sort.dir === 'asc' ? cmp : -cmp
-    })
-    return sorted
-  }, [data, search, sort])
-
-  useEffect(() => { setPage(1) }, [search, sort, filters, pageSize])
-  const paged = visible.slice((page - 1) * pageSize, page * pageSize)
-
-  const shownRemaining = useMemo(
-    () => visible.reduce((sum, r) => sum + Number(r.remaining), 0),
-    [visible]
-  )
+  const rows = data?.rows ?? []
+  const filteredCount = data?.filteredCount ?? 0
+  const filteredRemaining = data?.filteredRemaining ?? 0
 
   const years: number[] = []
   for (let y = now.getFullYear(); y >= now.getFullYear() - 5; y--) years.push(y)
@@ -80,7 +77,7 @@ export default function Receivables() {
       <div className="topbar" style={{ marginBottom: 18 }}>
         <div>
           <h2 style={{ fontSize: 20 }}>Receivables</h2>
-          <p>{visible.length} {visible.length === 1 ? 'person owes' : 'people owe'} you · Outstanding {currency(shownRemaining)}</p>
+          <p>{filteredCount} {filteredCount === 1 ? 'person owes' : 'people owe'} you · Outstanding {currency(filteredRemaining)}</p>
         </div>
       </div>
 
@@ -135,7 +132,7 @@ export default function Receivables() {
 
         {loading ? (
           <div className="empty"><span className="spinner" /></div>
-        ) : visible.length === 0 ? (
+        ) : rows.length === 0 ? (
           <div className="empty">No outstanding amounts. Everyone is settled up. 🎉</div>
         ) : (
           <div className="table-scroll">
@@ -149,7 +146,7 @@ export default function Receivables() {
                 </tr>
               </thead>
               <tbody>
-                {paged.map((r) => (
+                {rows.map((r) => (
                   <tr key={r.personId}>
                     <td style={{ fontWeight: 600 }}>{r.person}</td>
                     <td className="amount" style={{ textAlign: 'right' }}>{currency(r.given)}</td>
@@ -163,7 +160,7 @@ export default function Receivables() {
             </table>
           </div>
         )}
-        <Pagination page={page} pageSize={pageSize} total={visible.length} onPage={setPage} onPageSize={setPageSize} />
+        <Pagination page={page} pageSize={pageSize} total={filteredCount} onPage={setPage} onPageSize={setPageSize} />
       </div>
     </div>
   )

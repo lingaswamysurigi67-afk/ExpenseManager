@@ -12,5 +12,8 @@ public class AdminUserRow
 public class AdminUsersResponse
 {
     public int TotalUsers { get; set; }
+    public int FilteredCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
     public List<AdminUserRow> Users { get; set; } = new();
 }

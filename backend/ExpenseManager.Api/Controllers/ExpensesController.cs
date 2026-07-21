@@ -20,20 +20,64 @@ public class ExpensesController : ControllerBase
     private string UserId => User.FindFirstValue(ClaimTypes.NameIdentifier)!;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? year, [FromQuery] int? month, [FromQuery] int? categoryId, [FromQuery] DateTime? from, [FromQuery] DateTime? to)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int? year, [FromQuery] int? month, [FromQuery] int? categoryId,
+        [FromQuery] DateTime? from, [FromQuery] DateTime? to,
+        [FromQuery] string? search, [FromQuery] string? sort, [FromQuery] string? dir,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var query = _db.Expenses.Where(e => e.UserId == UserId);
+        (page, pageSize) = Paging.Normalize(page, pageSize);
 
-        if (year.HasValue) query = query.Where(e => e.Date.Year == year.Value);
-        if (month.HasValue) query = query.Where(e => e.Date.Month == month.Value);
-        if (categoryId.HasValue) query = query.Where(e => e.CategoryId == categoryId.Value);
-        if (from.HasValue) query = query.Where(e => e.Date >= from.Value.Date);
-        if (to.HasValue) query = query.Where(e => e.Date <= to.Value.Date);
+        // Left-join People so we can search and sort by the person's name.
+        var query =
+            from e in _db.Expenses.Where(e => e.UserId == UserId)
+            join p in _db.People on e.PersonId equals p.Id into pj
+            from p in pj.DefaultIfEmpty()
+            select new { e, PersonName = (string?)(p == null ? null : p.Name) };
 
-        var list = await query
-            .OrderByDescending(e => e.Date).ThenByDescending(e => e.CreatedDate)
+        if (year.HasValue) query = query.Where(x => x.e.Date.Year == year.Value);
+        if (month.HasValue) query = query.Where(x => x.e.Date.Month == month.Value);
+        if (categoryId.HasValue) query = query.Where(x => x.e.CategoryId == categoryId.Value);
+        if (from.HasValue) query = query.Where(x => x.e.Date >= from.Value.Date);
+        if (to.HasValue) query = query.Where(x => x.e.Date <= to.Value.Date);
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var s = $"%{search.Trim()}%";
+            query = query.Where(x =>
+                EF.Functions.ILike(x.e.Category, s) ||
+                EF.Functions.ILike(x.e.Notes, s) ||
+                EF.Functions.ILike(x.e.PaymentMethod, s) ||
+                (x.PersonName != null && EF.Functions.ILike(x.PersonName, s)));
+        }
+
+        var totalCount = await query.CountAsync();
+        var totalAmount = totalCount == 0 ? 0m : await query.SumAsync(x => x.e.Amount);
+
+        var asc = Paging.Ascending(dir);
+        query = (sort?.ToLowerInvariant()) switch
+        {
+            "amount" => asc ? query.OrderBy(x => x.e.Amount) : query.OrderByDescending(x => x.e.Amount),
+            "person" => asc ? query.OrderBy(x => x.PersonName) : query.OrderByDescending(x => x.PersonName),
+            "category" => asc ? query.OrderBy(x => x.e.Category) : query.OrderByDescending(x => x.e.Category),
+            _ => asc
+                ? query.OrderBy(x => x.e.Date).ThenBy(x => x.e.CreatedDate)
+                : query.OrderByDescending(x => x.e.Date).ThenByDescending(x => x.e.CreatedDate),
+        };
+
+        var items = await query
+            .Skip((page - 1) * pageSize).Take(pageSize)
+            .Select(x => x.e)
             .ToListAsync();
-        return Ok(list.Select(ExpenseResponse.From));
+
+        return Ok(new ExpensePagedResult
+        {
+            Items = items.Select(ExpenseResponse.From).ToList(),
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalAmount = totalAmount
+        });
     }
 
     [HttpGet("{id:int}")]

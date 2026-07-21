@@ -123,6 +123,10 @@ export interface Receivables {
   totalGiven: number
   totalReturned: number
   totalRemaining: number
+  filteredCount: number
+  filteredRemaining: number
+  page: number
+  pageSize: number
   rows: ReceivableRow[]
 }
 
@@ -136,7 +140,26 @@ export interface AdminUserRow {
 
 export interface AdminUsersResponse {
   totalUsers: number
+  filteredCount: number
+  page: number
+  pageSize: number
   users: AdminUserRow[]
+}
+
+// ----- Server-side paging -----
+export interface Paged<T> {
+  items: T[]
+  page: number
+  pageSize: number
+  totalCount: number
+}
+
+export interface ExpensePage extends Paged<Expense> {
+  totalAmount: number
+}
+
+export interface IncomePage extends Paged<Income> {
+  totalAmount: number
 }
 
 // ----- Bulk import -----

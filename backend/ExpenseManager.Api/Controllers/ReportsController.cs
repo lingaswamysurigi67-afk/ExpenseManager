@@ -74,8 +74,13 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("receivables")]
-    public async Task<IActionResult> Receivables([FromQuery] int? year, [FromQuery] int? month)
+    public async Task<IActionResult> Receivables(
+        [FromQuery] int? year, [FromQuery] int? month,
+        [FromQuery] string? search, [FromQuery] string? sort, [FromQuery] string? dir,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
+        (page, pageSize) = Paging.Normalize(page, pageSize);
+
         var expenseQuery = _db.Expenses.Where(e => e.UserId == UserId && e.PersonId != null);
         var incomeQuery = _db.Incomes.Where(i => i.UserId == UserId && i.PersonId != null);
 
@@ -109,7 +114,7 @@ public class ReportsController : ControllerBase
             .Where(p => p.UserId == UserId && personIds.Contains(p.Id))
             .ToDictionaryAsync(p => p.Id, p => p.Name);
 
-        var rows = personIds
+        var allRows = personIds
             .Select(id =>
             {
                 var g = givenMap.TryGetValue(id, out var gv) ? gv : 0m;
@@ -124,15 +129,41 @@ public class ReportsController : ControllerBase
                 };
             })
             .Where(row => row.Remaining != 0)
-            .OrderByDescending(row => row.Remaining)
+            .ToList();
+
+        // Overall totals (independent of search) power the stat cards.
+        var totalGiven = allRows.Sum(r => r.Given);
+        var totalReturned = allRows.Sum(r => r.Returned);
+        var totalRemaining = allRows.Sum(r => r.Remaining);
+
+        // Apply search (by person name), then sort and page in memory (one row per person).
+        var filtered = string.IsNullOrWhiteSpace(search)
+            ? allRows
+            : allRows.Where(r => r.Person.Contains(search.Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
+
+        var asc = Paging.Ascending(dir);
+        filtered = (sort?.ToLowerInvariant()) switch
+        {
+            "person" => (asc ? filtered.OrderBy(r => r.Person) : filtered.OrderByDescending(r => r.Person)).ToList(),
+            "given" => (asc ? filtered.OrderBy(r => r.Given) : filtered.OrderByDescending(r => r.Given)).ToList(),
+            "returned" => (asc ? filtered.OrderBy(r => r.Returned) : filtered.OrderByDescending(r => r.Returned)).ToList(),
+            _ => (asc ? filtered.OrderBy(r => r.Remaining) : filtered.OrderByDescending(r => r.Remaining)).ToList(),
+        };
+
+        var pagedRows = filtered
+            .Skip((page - 1) * pageSize).Take(pageSize)
             .ToList();
 
         var response = new ReceivablesResponse
         {
-            TotalGiven = rows.Sum(r => r.Given),
-            TotalReturned = rows.Sum(r => r.Returned),
-            TotalRemaining = rows.Sum(r => r.Remaining),
-            Rows = rows
+            TotalGiven = totalGiven,
+            TotalReturned = totalReturned,
+            TotalRemaining = totalRemaining,
+            FilteredCount = filtered.Count,
+            FilteredRemaining = filtered.Sum(r => r.Remaining),
+            Page = page,
+            PageSize = pageSize,
+            Rows = pagedRows
         };
 
         return Ok(response);
