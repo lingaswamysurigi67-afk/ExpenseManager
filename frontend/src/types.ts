@@ -23,6 +23,16 @@ export interface Category {
   updatedDate: string | null
 }
 
+export interface SubCategory {
+  id: number
+  categoryId: number
+  name: string
+  createdBy: string
+  createdDate: string
+  updatedBy: string | null
+  updatedDate: string | null
+}
+
 export interface Person {
   id: number
   userId: string
@@ -39,6 +49,8 @@ export interface Expense {
   amount: number
   categoryId: number
   category: string
+  subCategoryId: number | null
+  subCategory: string | null
   personId: number | null
   date: string
   paymentMethod: string
@@ -69,6 +81,7 @@ export interface Income {
 export interface ExpensePayload {
   amount: number
   categoryId: number
+  subCategoryId: number | null
   personId: number
   date: string
   paymentMethod: string

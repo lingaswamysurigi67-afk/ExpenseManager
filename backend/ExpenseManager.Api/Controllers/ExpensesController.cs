@@ -98,12 +98,18 @@ public class ExpensesController : ControllerBase
         if (person is null)
             return BadRequest(new { message = "Invalid person." });
 
+        var (subError, subCategory) = await ResolveSubCategory(category.Id, request.SubCategoryId);
+        if (subError is not null)
+            return BadRequest(new { message = subError });
+
         var expense = new Expense
         {
             UserId = UserId,
             Amount = request.Amount,
             CategoryId = category.Id,
             Category = category.Name,
+            SubCategoryId = subCategory?.Id,
+            SubCategory = subCategory?.Name,
             PersonId = person.Id,
             Date = request.Date,
             PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod,
@@ -131,9 +137,15 @@ public class ExpensesController : ControllerBase
         var expense = await _db.Expenses.FirstOrDefaultAsync(e => e.Id == id && e.UserId == UserId);
         if (expense is null) return NotFound();
 
+        var (subError, subCategory) = await ResolveSubCategory(category.Id, request.SubCategoryId);
+        if (subError is not null)
+            return BadRequest(new { message = subError });
+
         expense.Amount = request.Amount;
         expense.CategoryId = category.Id;
         expense.Category = category.Name;
+        expense.SubCategoryId = subCategory?.Id;
+        expense.SubCategory = subCategory?.Name;
         expense.PersonId = person.Id;
         expense.Date = request.Date;
         expense.PaymentMethod = string.IsNullOrWhiteSpace(request.PaymentMethod) ? "Cash" : request.PaymentMethod;
@@ -143,6 +155,26 @@ public class ExpensesController : ControllerBase
 
         await _db.SaveChangesAsync();
         return Ok(ExpenseResponse.From(expense));
+    }
+
+    // Validates the chosen sub-category against the category. If the category has any
+    // sub-categories configured, one must be selected; otherwise no sub-category is allowed.
+    private async Task<(string? error, SubCategory? subCategory)> ResolveSubCategory(int categoryId, int? subCategoryId)
+    {
+        var hasSubCategories = await _db.SubCategories.AnyAsync(s => s.CategoryId == categoryId);
+
+        if (!hasSubCategories)
+            return (null, null);
+
+        if (subCategoryId is null)
+            return ("Please choose a sub-category for this category.", null);
+
+        var subCategory = await _db.SubCategories
+            .FirstOrDefaultAsync(s => s.Id == subCategoryId.Value && s.CategoryId == categoryId);
+        if (subCategory is null)
+            return ("Invalid sub-category.", null);
+
+        return (null, subCategory);
     }
 
     [HttpDelete("{id:int}")]

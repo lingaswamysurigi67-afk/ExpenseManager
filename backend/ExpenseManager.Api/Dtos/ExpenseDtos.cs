@@ -11,6 +11,8 @@ public class ExpenseRequest
     [Range(1, int.MaxValue)]
     public int CategoryId { get; set; }
 
+    public int? SubCategoryId { get; set; }
+
     [Range(1, int.MaxValue)]
     public int PersonId { get; set; }
 
@@ -31,6 +33,8 @@ public class ExpenseResponse
     public decimal Amount { get; set; }
     public int CategoryId { get; set; }
     public string Category { get; set; } = string.Empty;
+    public int? SubCategoryId { get; set; }
+    public string? SubCategory { get; set; }
     public int? PersonId { get; set; }
     public DateTime Date { get; set; }
     public string PaymentMethod { get; set; } = string.Empty;
@@ -47,6 +51,8 @@ public class ExpenseResponse
         Amount = e.Amount,
         CategoryId = e.CategoryId,
         Category = e.Category,
+        SubCategoryId = e.SubCategoryId,
+        SubCategory = e.SubCategory,
         PersonId = e.PersonId,
         Date = e.Date,
         PaymentMethod = e.PaymentMethod,
@@ -65,4 +71,32 @@ public class CategoryRequest
 
     [MaxLength(20)]
     public string Color { get; set; } = "#4f46e5";
+}
+
+public class SubCategoryRequest
+{
+    [Required, MinLength(1), MaxLength(40)]
+    public string Name { get; set; } = string.Empty;
+}
+
+public class SubCategoryResponse
+{
+    public int Id { get; set; }
+    public int CategoryId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string CreatedBy { get; set; } = string.Empty;
+    public DateTime CreatedDate { get; set; }
+    public string? UpdatedBy { get; set; }
+    public DateTime? UpdatedDate { get; set; }
+
+    public static SubCategoryResponse From(SubCategory s) => new()
+    {
+        Id = s.Id,
+        CategoryId = s.CategoryId,
+        Name = s.Name,
+        CreatedBy = s.CreatedBy,
+        CreatedDate = s.CreatedDate,
+        UpdatedBy = s.UpdatedBy,
+        UpdatedDate = s.UpdatedDate
+    };
 }

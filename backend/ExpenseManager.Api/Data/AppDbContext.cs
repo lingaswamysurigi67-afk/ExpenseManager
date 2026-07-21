@@ -9,6 +9,7 @@ public class AppDbContext : DbContext
 
     public DbSet<User> Users => Set<User>();
     public DbSet<Category> Categories => Set<Category>();
+    public DbSet<SubCategory> SubCategories => Set<SubCategory>();
     public DbSet<Expense> Expenses => Set<Expense>();
     public DbSet<Income> Incomes => Set<Income>();
     public DbSet<Person> People => Set<Person>();
@@ -49,6 +50,22 @@ public class AppDbContext : DbContext
             e.HasQueryFilter(c => c.IsActive);
         });
 
+        modelBuilder.Entity<SubCategory>(e =>
+        {
+            e.ToTable("SUB_CATEGORIES", "Config");
+            e.HasKey(s => s.Id);
+            e.Property(s => s.Id).HasColumnName("ID");
+            e.Property(s => s.CategoryId).HasColumnName("CATEGORY_ID");
+            e.Property(s => s.Name).HasColumnName("NAME").HasMaxLength(40).IsRequired();
+            e.Property(s => s.CreatedBy).HasColumnName("CREATED_BY").HasMaxLength(100).IsRequired();
+            e.Property(s => s.CreatedDate).HasColumnName("CREATED_DATE");
+            e.Property(s => s.UpdatedBy).HasColumnName("UPDATED_BY").HasMaxLength(100);
+            e.Property(s => s.UpdatedDate).HasColumnName("UPDATED_DATE");
+            e.Property(s => s.IsActive).HasColumnName("IS_ACTIVE").HasDefaultValue(true);
+            e.HasQueryFilter(s => s.IsActive);
+            e.HasIndex(s => s.CategoryId);
+        });
+
         modelBuilder.Entity<Expense>(e =>
         {
             e.ToTable("EXPENSES", "People");
@@ -58,6 +75,8 @@ public class AppDbContext : DbContext
             e.Property(x => x.Amount).HasColumnName("AMOUNT").HasPrecision(18, 2);
             e.Property(x => x.CategoryId).HasColumnName("CATEGORY_ID");
             e.Property(x => x.Category).HasColumnName("CATEGORY").HasMaxLength(40);
+            e.Property(x => x.SubCategoryId).HasColumnName("SUB_CATEGORY_ID");
+            e.Property(x => x.SubCategory).HasColumnName("SUB_CATEGORY").HasMaxLength(40);
             e.Property(x => x.PersonId).HasColumnName("PERSON_ID");
             e.Property(x => x.Date).HasColumnName("EXPENDITURE_DATE");
             e.Property(x => x.PaymentMethod).HasColumnName("PAYMENT_METHOD").HasMaxLength(30);

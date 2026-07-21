@@ -8,11 +8,12 @@ import type { SortDir } from '../components/SortHeader'
 import Pagination from '../components/Pagination'
 import { useDebouncedValue } from '../hooks'
 import { currency, formatDate, monthNames } from '../utils'
-import type { Category, Person, Expense, ExpensePayload, ExpensePage } from '../types'
+import type { Category, SubCategory, Person, Expense, ExpensePayload, ExpensePage } from '../types'
 
 export default function Expenses() {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([])
   const [people, setPeople] = useState<Person[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const [totalAmount, setTotalAmount] = useState(0)
@@ -37,11 +38,13 @@ export default function Expenses() {
 
   // Categories and people rarely change; fetch them once for display and the modal.
   const loadLookups = async () => {
-    const [cat, ppl] = await Promise.all([
+    const [cat, sub, ppl] = await Promise.all([
       client.get<Category[]>('/categories'),
+      client.get<SubCategory[]>('/subcategories'),
       client.get<Person[]>('/people'),
     ])
     setCategories(cat.data)
+    setSubCategories(sub.data)
     setPeople(ppl.data)
   }
 
@@ -268,6 +271,9 @@ export default function Expenses() {
                         <span className="dot" style={{ background: catColor(e.categoryId) }} />
                         {e.category}
                       </span>
+                      {e.subCategory && (
+                        <div style={{ fontSize: 12, color: 'var(--text-dim)', marginTop: 4 }}>{e.subCategory}</div>
+                      )}
                     </td>
                     <td style={{ color: 'var(--text-dim)', maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {e.notes || '—'}
@@ -294,6 +300,7 @@ export default function Expenses() {
         onClose={() => setModalOpen(false)}
         onSave={save}
         categories={categories}
+        subCategories={subCategories}
         people={people}
         initial={editing}
       />

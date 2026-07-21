@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { toInputDate, paymentMethods, getErrorMessage } from '../utils'
-import type { Category, Person, Expense, ExpensePayload } from '../types'
+import type { Category, SubCategory, Person, Expense, ExpensePayload } from '../types'
 
 interface ExpenseModalProps {
   open: boolean
   onClose: () => void
   onSave: (payload: ExpensePayload) => Promise<void>
   categories: Category[]
+  subCategories: SubCategory[]
   people: Person[]
   initial: Expense | null
 }
@@ -16,16 +17,18 @@ interface FormState {
   amount: string
   personId: string
   categoryId: string
+  subCategoryId: string
   date: string
   paymentMethod: string
   notes: string
 }
 
-export default function ExpenseModal({ open, onClose, onSave, categories, people, initial }: ExpenseModalProps) {
+export default function ExpenseModal({ open, onClose, onSave, categories, subCategories, people, initial }: ExpenseModalProps) {
   const [form, setForm] = useState<FormState>({
     amount: '',
     personId: '',
     categoryId: '',
+    subCategoryId: '',
     date: toInputDate(),
     paymentMethod: 'Cash',
     notes: '',
@@ -41,6 +44,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
           amount: String(initial.amount),
           personId: initial.personId != null ? String(initial.personId) : '',
           categoryId: String(initial.categoryId),
+          subCategoryId: initial.subCategoryId != null ? String(initial.subCategoryId) : '',
           date: toInputDate(initial.date),
           paymentMethod: initial.paymentMethod || 'Cash',
           notes: initial.notes || '',
@@ -50,6 +54,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
           amount: '',
           personId: '',
           categoryId: '',
+          subCategoryId: '',
           date: toInputDate(),
           paymentMethod: 'Cash',
           notes: '',
@@ -60,6 +65,10 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
 
   if (!open) return null
 
+  const categorySubs = form.categoryId
+    ? subCategories.filter((s) => s.categoryId === Number(form.categoryId))
+    : []
+
   const submit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
@@ -67,6 +76,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
     if (!amount || amount <= 0) return setError('Enter a valid amount greater than 0.')
     if (!form.personId) return setError('Please select who the expense was on.')
     if (!form.categoryId) return setError('Please choose a category.')
+    if (categorySubs.length > 0 && !form.subCategoryId) return setError('Please choose a sub-category.')
 
     setSaving(true)
     try {
@@ -74,6 +84,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
         amount,
         personId: Number(form.personId),
         categoryId: Number(form.categoryId),
+        subCategoryId: categorySubs.length > 0 && form.subCategoryId ? Number(form.subCategoryId) : null,
         date: new Date(form.date).toISOString(),
         paymentMethod: form.paymentMethod,
         notes: form.notes,
@@ -142,7 +153,7 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
               className="input"
               value={form.categoryId}
               disabled={!form.personId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+              onChange={(e) => setForm({ ...form, categoryId: e.target.value, subCategoryId: '' })}
             >
               <option value="">{form.personId ? 'Select a category…' : 'Select a person first'}</option>
               {categories.map((c) => (
@@ -150,6 +161,22 @@ export default function ExpenseModal({ open, onClose, onSave, categories, people
               ))}
             </select>
           </div>
+
+          {categorySubs.length > 0 && (
+            <div className="field">
+              <label>Sub-category</label>
+              <select
+                className="input"
+                value={form.subCategoryId}
+                onChange={(e) => setForm({ ...form, subCategoryId: e.target.value })}
+              >
+                <option value="">Select a sub-category…</option>
+                {categorySubs.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="field">
             <label>Payment method</label>
