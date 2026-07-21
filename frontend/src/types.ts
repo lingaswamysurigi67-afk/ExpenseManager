@@ -138,3 +138,46 @@ export interface AdminUsersResponse {
   totalUsers: number
   users: AdminUserRow[]
 }
+
+// ----- Bulk import -----
+export interface ImportRowPreview {
+  rowNumber: number
+  amount: number | null
+  category: string
+  person: string
+  source: string
+  date: string | null
+  dateText: string
+  paymentMethod: string
+  notes: string
+  valid: boolean
+  error: string | null
+}
+
+export interface ImportPreviewResponse {
+  total: number
+  validCount: number
+  invalidCount: number
+  rows: ImportRowPreview[]
+}
+
+export interface ImportCommitRow {
+  amount: number
+  category: string
+  person: string
+  source: string
+  date: string
+  paymentMethod: string
+  notes: string
+}
+
+export interface ImportRowError {
+  rowNumber: number
+  message: string
+}
+
+export interface ImportCommitResponse {
+  imported: number
+  failed: number
+  errors: ImportRowError[]
+}

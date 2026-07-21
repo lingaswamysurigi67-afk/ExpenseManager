@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import IncomeModal from '../components/IncomeModal'
+import ImportModal from '../components/ImportModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
@@ -15,6 +16,7 @@ export default function Income() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<IncomeModel | null>(null)
 
   const now = new Date()
@@ -156,9 +158,14 @@ export default function Income() {
           <h2 style={{ fontSize: 20 }}>Income</h2>
           <p>{visible.length} record{visible.length !== 1 ? 's' : ''} · Total {currency(total)}</p>
         </div>
-        <button className="btn" onClick={() => { setEditing(null); setModalOpen(true) }}>
-          ＋ Add income
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button className="btn ghost" onClick={() => setImportOpen(true)}>
+            ⬆ Import
+          </button>
+          <button className="btn" onClick={() => { setEditing(null); setModalOpen(true) }}>
+            ＋ Add income
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 18 }}>
@@ -287,6 +294,15 @@ export default function Income() {
         categories={categories}
         people={people}
         initial={editing}
+      />
+
+      <ImportModal
+        open={importOpen}
+        kind="income"
+        onClose={() => setImportOpen(false)}
+        onImported={load}
+        categories={categories}
+        people={people}
       />
 
       <ConfirmDialog

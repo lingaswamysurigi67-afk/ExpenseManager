@@ -278,6 +278,22 @@ td .tag { padding: 3px 10px; font-size: 13px; }
 .confirm-modal { max-width: 420px; }
 .calc-modal { max-width: 340px; padding: 22px; }
 
+/* ---------- Import modal ---------- */
+.import-modal { max-width: 860px; }
+.import-drop {
+  display: flex; align-items: center; gap: 12px;
+  border: 1px dashed var(--border); border-radius: 12px;
+  padding: 18px; background: var(--glass-strong); margin-top: 4px;
+}
+.import-drop input[type="file"] { font-size: 14px; color: var(--text); max-width: 100%; }
+.import-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.import-badge.ok { background: rgba(34, 197, 94, 0.14); color: #15803d; }
+.import-badge.bad { background: rgba(239, 77, 99, 0.14); color: #c62f45; }
+.row-invalid { background: rgba(239, 77, 99, 0.05); }
+
 /* ---------- Calculator ---------- */
 .calc-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .calc-display {

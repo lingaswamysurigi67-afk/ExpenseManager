@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import client from '../api/client'
 import ExpenseModal from '../components/ExpenseModal'
+import ImportModal from '../components/ImportModal'
 import ConfirmDialog from '../components/ConfirmDialog'
 import SortHeader from '../components/SortHeader'
 import type { SortDir } from '../components/SortHeader'
@@ -15,6 +16,7 @@ export default function Expenses() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<Expense | null>(null)
 
   const now = new Date()
@@ -155,9 +157,14 @@ export default function Expenses() {
           <h2 style={{ fontSize: 20 }}>Expenses</h2>
           <p>{visible.length} record{visible.length !== 1 ? 's' : ''} · Total {currency(total)}</p>
         </div>
-        <button className="btn" onClick={() => { setEditing(null); setModalOpen(true) }}>
-          ＋ Add expense
-        </button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button className="btn ghost" onClick={() => setImportOpen(true)}>
+            ⬆ Import
+          </button>
+          <button className="btn" onClick={() => { setEditing(null); setModalOpen(true) }}>
+            ＋ Add expense
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: 18 }}>
@@ -286,6 +293,15 @@ export default function Expenses() {
         categories={categories}
         people={people}
         initial={editing}
+      />
+
+      <ImportModal
+        open={importOpen}
+        kind="expense"
+        onClose={() => setImportOpen(false)}
+        onImported={load}
+        categories={categories}
+        people={people}
       />
 
       <ConfirmDialog

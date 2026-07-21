@@ -2,6 +2,7 @@ using System.Security.Claims;
 using ExpenseManager.Api.Data;
 using ExpenseManager.Api.Dtos;
 using ExpenseManager.Api.Models;
+using ExpenseManager.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -131,5 +132,132 @@ public class ExpensesController : ControllerBase
         }
         await _db.SaveChangesAsync();
         return Ok(new { deleted = toDelete.Count });
+    }
+
+    // Parse an uploaded CSV/XLSX and return a validated preview WITHOUT writing anything.
+    [HttpPost("import/preview")]
+    [RequestSizeLimit(ImportFileParser.MaxFileBytes)]
+    public async Task<IActionResult> ImportPreview(IFormFile file)
+    {
+        List<ImportFileRow> rows;
+        try { rows = ImportFileParser.Parse(file); }
+        catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+
+        var categories = await _db.Categories
+            .ToDictionaryAsync(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        var people = await _db.People.Where(p => p.UserId == UserId)
+            .ToDictionaryAsync(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+        var previews = rows.Select(r => BuildPreview(r, categories, people)).ToList();
+        return Ok(new ImportPreviewResponse
+        {
+            Total = previews.Count,
+            ValidCount = previews.Count(p => p.Valid),
+            InvalidCount = previews.Count(p => !p.Valid),
+            Rows = previews
+        });
+    }
+
+    // Commit the rows the user chose to import (re-validated server-side).
+    [HttpPost("import")]
+    public async Task<IActionResult> Import(ImportCommitRequest request)
+    {
+        if (request.Rows is null || request.Rows.Count == 0)
+            return BadRequest(new { message = "No rows to import." });
+        if (request.Rows.Count > ImportFileParser.MaxRows)
+            return BadRequest(new { message = $"Too many rows (max {ImportFileParser.MaxRows})." });
+
+        var categories = await _db.Categories
+            .ToDictionaryAsync(c => c.Name, StringComparer.OrdinalIgnoreCase);
+        var people = await _db.People.Where(p => p.UserId == UserId)
+            .ToDictionaryAsync(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+        var errors = new List<ImportRowError>();
+        var toAdd = new List<Expense>();
+        var now = DateTime.UtcNow;
+
+        for (var i = 0; i < request.Rows.Count; i++)
+        {
+            var row = request.Rows[i];
+            var rowNumber = i + 1;
+
+            if (row.Amount <= 0)
+            { errors.Add(new ImportRowError { RowNumber = rowNumber, Message = "Amount must be greater than 0." }); continue; }
+            if (!categories.TryGetValue(row.Category?.Trim() ?? "", out var category))
+            { errors.Add(new ImportRowError { RowNumber = rowNumber, Message = $"Unknown category \"{row.Category}\"." }); continue; }
+            if (!people.TryGetValue(row.Person?.Trim() ?? "", out var person))
+            { errors.Add(new ImportRowError { RowNumber = rowNumber, Message = $"Unknown person \"{row.Person}\"." }); continue; }
+
+            toAdd.Add(new Expense
+            {
+                UserId = UserId,
+                Amount = row.Amount,
+                CategoryId = category.Id,
+                Category = category.Name,
+                PersonId = person.Id,
+                Date = row.Date,
+                PaymentMethod = string.IsNullOrWhiteSpace(row.PaymentMethod) ? "Cash" : row.PaymentMethod.Trim(),
+                Notes = row.Notes?.Trim() ?? string.Empty,
+                CreatedBy = UserId,
+                CreatedDate = now
+            });
+        }
+
+        if (toAdd.Count > 0)
+        {
+            _db.Expenses.AddRange(toAdd);
+            await _db.SaveChangesAsync();
+        }
+
+        return Ok(new ImportCommitResponse
+        {
+            Imported = toAdd.Count,
+            Failed = errors.Count,
+            Errors = errors
+        });
+    }
+
+    private static ImportRowPreview BuildPreview(
+        ImportFileRow row,
+        Dictionary<string, Models.Category> categories,
+        Dictionary<string, Models.Person> people)
+    {
+        var amountText = row.Get("Amount");
+        var dateText = row.Get("Date");
+        var categoryName = row.Get("Category");
+        var personName = row.Get("Person", "Expenditure On");
+        var paymentMethod = row.Get("Payment Method", "PaymentMethod", "Method");
+        var notes = row.Get("Notes");
+
+        var preview = new ImportRowPreview
+        {
+            RowNumber = row.RowNumber,
+            Category = categoryName,
+            Person = personName,
+            DateText = dateText,
+            PaymentMethod = string.IsNullOrWhiteSpace(paymentMethod) ? "Cash" : paymentMethod,
+            Notes = notes
+        };
+
+        string? error = null;
+        if (ImportValues.TryParseAmount(amountText, out var amount)) preview.Amount = amount;
+        if (ImportValues.TryParseDate(dateText, out var date)) preview.Date = date;
+
+        if (!preview.Amount.HasValue || preview.Amount <= 0)
+            error ??= "Amount must be a number greater than 0.";
+        if (!preview.Date.HasValue)
+            error ??= "Date is missing or not a recognised format.";
+        if (string.IsNullOrWhiteSpace(categoryName))
+            error ??= "Category is required.";
+        else if (!categories.ContainsKey(categoryName))
+            error ??= $"Unknown category \"{categoryName}\".";
+        if (string.IsNullOrWhiteSpace(personName))
+            error ??= "Person is required.";
+        else if (!people.ContainsKey(personName))
+            error ??= $"Unknown person \"{personName}\".";
+
+        preview.Valid = error is null;
+        preview.Error = error;
+        return preview;
     }
 }
